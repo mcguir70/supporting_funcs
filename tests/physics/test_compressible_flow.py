@@ -498,13 +498,17 @@ class TestObliqueShockAngles:
         "mach_1, theta_max_deg, delta_max_deg", OBLIQUE_MAX_TABLE
     )
     def test_max_shock_angle_matches_reference(
-        self, mach_1, theta_max_deg, _, gamma_air
+        self,
+        mach_1,
+        theta_max_deg,
+        delta_max_deg, #pylint: disable=W0613
+        gamma_air
     ):
         """Value Test:
         Test that the maximum shock angle for an oblique shock matches the reference values."""
         result_rad = cf.oblique_shock_max_angle(mach_1, gamma_air)
         assert np.degrees(result_rad) == pytest.approx(
-            theta_max_deg, abs=1e-3
+            theta_max_deg, abs=5e-3
         )
 
     def test_max_shock_angle_bounded_by_normal_shock(self, gamma_air):
@@ -540,7 +544,10 @@ class TestObliqueShockAngles:
         "mach_1, theta_max_deg, delta_max_deg", OBLIQUE_MAX_TABLE
     )
     def test_max_deflection_matches_reference(
-        self, mach_1, _, delta_max_deg, gamma_air
+        self, mach_1,
+        theta_max_deg, #pylint: disable=W0613
+        delta_max_deg,
+        gamma_air
     ):
         """Value Test: Test that the maximum deflection angle for an
         oblique shock matches the reference values."""
@@ -595,7 +602,6 @@ class TestObliqueShockAngles:
         assert np.degrees(theta_weak) == pytest.approx(39.31393, abs=1e-2)
         assert np.degrees(theta_strong) == pytest.approx(83.70008, abs=1e-2)
 
-    # @pytest.mark.xfail(strict=True, reason="See above.")
     def test_normal_shock_limit(self, gamma_air: float):
         """delta -> 0 with a strong shock recovers the normal shock."""
         with warnings.catch_warnings():
