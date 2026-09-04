@@ -51,8 +51,10 @@ exclude_lines = [
 ]
 
 [tool.ruff]
-line-length = 79
+line-length = 100
 src = ["src", "tests"]
+
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B"]
+ignore = ["N812", "UP040"]

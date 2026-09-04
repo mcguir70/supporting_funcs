@@ -1,10 +1,11 @@
 """Type aliases for common array types used in physics calculations."""
 
 from typing import Any, TypeAlias
-from numpy import float64, ndarray, dtype, bool as np_bool
-from numpy.typing import NDArray
-from matplotlib.axes import Axes
 
+from matplotlib.axes import Axes
+from numpy import bool as np_bool
+from numpy import dtype, float64, ndarray
+from numpy.typing import NDArray
 
 OneDArray: TypeAlias = ndarray[tuple[int], dtype[float64]] # pylint: disable=C0103
 OneDBoolArray: TypeAlias = ndarray[tuple[int], dtype[np_bool]] # pylint: disable=C0103

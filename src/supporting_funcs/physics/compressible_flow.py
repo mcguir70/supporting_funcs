@@ -1,29 +1,27 @@
 """# compressible_flow
-Equations and functions for compressible flow calculations. 
+Equations and functions for compressible flow calculations.
 Includes relationships for:
 - isentropic flow
 - normal shock
 - oblique shock
 - expansion fan"""
-from typing import Optional
 from warnings import warn
 
-from numpy import (
-    ndarray,
-    pi as PI,
-    arctan as np_atan,
-    tan as np_tan,
-    sin as np_sin,
-    cos as np_cos,
-    arcsin as np_asin,
-)
 import numpy as np
+from numpy import arcsin as np_asin
+from numpy import arctan as np_atan
+from numpy import cos as np_cos
+from numpy import ndarray
+from numpy import pi as PI
+from numpy import sin as np_sin
+from numpy import tan as np_tan
 from scipy.optimize import elementwise
 
 from supporting_funcs.coding.type_hints import BoolArray
 
+
 #region Isentropic Flow Relations
-def Psi(gamma: float | ndarray, mach: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def Psi(gamma: float | ndarray, mach: float | ndarray) -> float | ndarray: #pylint: disable=C0103 #noqa: N802
     """Calculate the Compressibility function Psi for a given specific heat ratio and Mach number.
 
     Parameters
@@ -34,22 +32,22 @@ def Psi(gamma: float | ndarray, mach: float | ndarray) -> float | ndarray: #pyli
             Mach number
     Returns
     -------
-        Psi: [1] 
+        Psi: [1]
             Compressibility function value
     """
     return 1 + (gamma - 1) / 2 * mach**2
 
-def P_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def P_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103 #noqa: N802
     """
     Calculate the isentropic pressure ratio from Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach: [1]
             Mach number
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         p/p0: [1]
@@ -57,18 +55,18 @@ def P_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | 
     """
     return Psi(gamma=gamma, mach=mach) ** (-gamma / (gamma - 1))
 
-def mach_from_P_ratio(p_rat: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def mach_from_P_ratio(p_rat: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103 #noqa: N802
     """
     Calculate the Mach number from pressure ratio and specific heat ratio.
 
     Parameters
     ----------
     p_rat: float | ndarray
-        [1] (p/p0) Isentropic pressure ratio 
+        [1] (p/p0) Isentropic pressure ratio
 
     gamma: float | ndarray
-        [1] (Cp/Cv) Specific heat ratio 
-    
+        [1] (Cp/Cv) Specific heat ratio
+
     Returns
     -------
     mach: [1]
@@ -76,17 +74,17 @@ def mach_from_P_ratio(p_rat: float | ndarray, gamma: float | ndarray) -> float |
     """
     return ((2 / (gamma - 1)) * (p_rat ** ((1 - gamma) / (gamma)) - 1))**0.5
 
-def T_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def T_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103 #noqa: N802
     """
     Calculate the temperature ratio from Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach: [1]
             Mach number
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         T/T0: [1]
@@ -114,14 +112,14 @@ def h_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | 
 def rho_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray:
     """
     Calculate the isentropic density ratio from Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach: [1]
             Mach number
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         rho/rho0: [1]
@@ -132,14 +130,14 @@ def rho_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float 
 def area_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray:
     """
     Calculate the area ratio from Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach: [1]
             Mach number
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         A/A*: [1]
@@ -148,24 +146,24 @@ def area_ratio_from_mach(mach: float | ndarray, gamma: float | ndarray) -> float
     return (1/mach) * (
         (2/(gamma + 1)) * (1 + 0.5*(gamma - 1)*mach**2)) ** ((gamma + 1)/(2 * (gamma - 1)))
 
-def mach_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
-                         P0: float | ndarray, #pylint: disable=C0103
+def mach_from_stagnation(T0: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                         P0: float | ndarray, #pylint: disable=C0103 #noqa: N803
                          mdot: float | ndarray,
                          gamma: float | ndarray,
-                         R: float | ndarray, #pylint: disable=C0103
+                         R: float | ndarray, #pylint: disable=C0103 #noqa: N803
                          area: float | ndarray,
                          supersonic: bool | ndarray = False) -> float | ndarray:
     """
-    Calculate the Mach number from stagnation conditions, 
+    Calculate the Mach number from stagnation conditions,
     mass flow rate, specific heat ratio, and gas constant.
-    
+
     Parameters
     ----------
-        T0: [K] 
+        T0: [K]
             Stagnation temperature
-        P0: [Pa] 
+        P0: [Pa]
             Stagnation pressure
-        mdot: [kg/s] 
+        mdot: [kg/s]
             Mass flow rate
         gamma: [1]
             Specific heat ratio (Cp/Cv)
@@ -193,11 +191,11 @@ def mach_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
             continue
         else:
             raise TypeError(f"Argument {arg} must be a float, int, or numpy ndarray.")
-    T0 = np.broadcast_to(T0, shape)
-    P0 = np.broadcast_to(P0, shape)
+    T0 = np.broadcast_to(T0, shape) #noqa: N806
+    P0 = np.broadcast_to(P0, shape) #noqa: N806
     mdot = np.broadcast_to(mdot, shape)
     gamma = np.broadcast_to(gamma, shape)
-    R = np.broadcast_to(R, shape)
+    R = np.broadcast_to(R, shape) #noqa: N806
     area = np.broadcast_to(area, shape)
 
     if isinstance(supersonic, bool | np.bool_ | ndarray):
@@ -210,11 +208,11 @@ def mach_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
                 * P_ratio_from_mach(mach=mach, gamma=gamma)
                 * T_ratio_from_mach(mach=mach, gamma=gamma) ** -0.5)
 
-    def _lhs(T0: ndarray, #pylint: disable=C0103
-             P0: ndarray, #pylint: disable=C0103
+    def _lhs(T0: ndarray, #pylint: disable=C0103 #noqa: N803
+             P0: ndarray, #pylint: disable=C0103 #noqa: N803
              mdot: ndarray,
              gamma: ndarray,
-             R: ndarray, #pylint: disable=C0103
+             R: ndarray, #pylint: disable=C0103 #noqa: N803
              area: ndarray
              ) -> ndarray:
         return mdot / (P0 * area) * (R * T0 / gamma) ** 0.5
@@ -258,16 +256,16 @@ def mach_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
 
     return np.asarray(mach).reshape(shape)
 
-def m_flux_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
-                           P0: float | ndarray, #pylint: disable=C0103
+def m_flux_from_stagnation(T0: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                           P0: float | ndarray, #pylint: disable=C0103 #noqa: N803
                            gamma: float | ndarray,
-                           R: float | ndarray, #pylint: disable=C0103
+                           R: float | ndarray, #pylint: disable=C0103 #noqa: N803
                            mach: float | ndarray
                            ) -> float | ndarray:
     """
-    Calculate the mass flux (mdot/A) from stagnation conditions, 
+    Calculate the mass flux (mdot/A) from stagnation conditions,
     specific heat ratio, gas constant, and Mach number.
-    
+
     Parameters
     ----------
         T0: [K]
@@ -283,17 +281,17 @@ def m_flux_from_stagnation(T0: float | ndarray, #pylint: disable=C0103
 
     Returns
     -------
-        mdot/A: [kg/(m^2*s)] 
+        mdot/A: [kg/(m^2*s)]
             Mass flux (mdot/A)
     """
     mass_flux = P0 * (gamma / (R * T0)) ** 0.5 * _D_func(mach=mach, gamma=gamma)
     return mass_flux
 
-def _D_func(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def _D_func(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103, #noqa: N802
     """
-    Helper function for mass flow rate calculation, 
+    Helper function for mass flow rate calculation,
     representing the Mach number dependent part of the mass flow rate equation.
-    
+
     Parameters
     ----------
         mach: [1]
@@ -313,8 +311,8 @@ def mach_from_area_ratio(area_rat: float | ndarray,
                          max_iter: int = 1000,
                          tol: float = 1e-6,
                          *,
-                         mach_lims: Optional[ndarray | tuple[float, float]] = None,
-                         supersonic: Optional[bool | BoolArray] = None,
+                         mach_lims: ndarray | tuple[float, float] | None = None,
+                         supersonic: bool | BoolArray | None = None,
                          ) -> float | ndarray:
     """
     Calculate the Mach number from area ratio and specific heat ratio.
@@ -375,7 +373,7 @@ def mach_from_area_ratio(area_rat: float | ndarray,
         if np.any(mach_lims <= 0):
             raise ValueError("mach_lims must be positive.")
         # raise NotImplementedError("Here") # TODO
-        if np.any(((mach_lims[..., 0] < 1) == (mach_lims[..., 1] > 1))):
+        if np.any((mach_lims[..., 0] < 1) == (mach_lims[..., 1] > 1)):
             raise ValueError(
                 "mach_lims must be such that " \
                 "the first and second columns are (both or neither) supersonic.")
@@ -420,13 +418,13 @@ def mach_from_area_ratio(area_rat: float | ndarray,
         return res.x.item()
     return res.x
 
-def T_recovery(temp_inf: float, #pylint: disable=C0103
+def T_recovery(temp_inf: float, #pylint: disable=C0103 #noqa: N802
                prandtl: float,
                gamma: float,
                mach: float,
                flow_type: str = 'turbulent') -> float:
     """
-    Calculate the recovery temperature for a given 
+    Calculate the recovery temperature for a given
     free stream temperature, Prandtl number, specific heat ratio, Mach number, and flow type.
 
     Parameters
@@ -457,7 +455,7 @@ def T_recovery(temp_inf: float, #pylint: disable=C0103
 def prandtl_meyer(mach: float | ndarray, gamma: float | ndarray) -> float | ndarray:
     """
     Calculate the Prandtl-Meyer function for a given Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach: [1]
@@ -489,12 +487,12 @@ def prandtl_meyer(mach: float | ndarray, gamma: float | ndarray) -> float | ndar
 def max_prandtl_meyer(gamma: float | ndarray) -> float | ndarray:
     """
     Calculate the maximum Prandtl-Meyer angle for a given specific heat ratio.
-    
+
     Parameters
     ----------
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         nu_{max}: [rad]
@@ -515,9 +513,9 @@ def expansion_fan_mach_2(mach_1: float | ndarray,
                          gamma: float | ndarray
                          ) -> float | ndarray:
     """
-    Calculate the downstream Mach number after an expansion fan for a given 
+    Calculate the downstream Mach number after an expansion fan for a given
     upstream Mach number, turning angle, and specific heat ratio.
-    
+
     Parameters
     ----------
         mach_1: [1]
@@ -580,14 +578,14 @@ def expansion_fan_max_turning_angle(mach_1: float | ndarray,
                                     ) -> float | ndarray:
     """
     Calculate the maximum turning angle for a given Mach number and specific heat ratio.
-    
+
     Parameters
     ----------
         mach_1: [1]
             Mach number
         gamma: [1]
             Specific heat ratio (Cp/Cv)
-    
+
     Returns
     -------
         delta_max: [rad]
@@ -600,7 +598,8 @@ def expansion_fan_max_turning_angle(mach_1: float | ndarray,
 #region Normal Shock Equations
 #  https://www.grc.nasa.gov/www/k-12/airplane/normal.html
 
-def normal_shock_P_ratio(mach_1: float | ndarray, gamma: float | ndarray) -> float | ndarray: #pylint: disable=C0103
+def normal_shock_P_ratio(mach_1: float | ndarray, #pylint: disable=C0103  #noqa: N802
+                         gamma: float | ndarray) -> float | ndarray:
     """
     Calculate the pressure ratio across a normal shock.
 
@@ -636,7 +635,7 @@ def normal_shock_mach_2(mach_1: float | ndarray, gamma: float | ndarray) -> floa
     """
     return (((gamma-1) * mach_1**2 +2) / (2 * gamma * mach_1**2 - (gamma - 1))) ** 0.5
 
-def normal_shock_P_tot_ratio( #pylint: disable=C0103
+def normal_shock_P_tot_ratio( #pylint: disable=C0103 #noqa: N802
         mach_1: float | ndarray,
         gamma: float | ndarray
         ) -> float | ndarray:
@@ -645,9 +644,9 @@ def normal_shock_P_tot_ratio( #pylint: disable=C0103
 
     Parameters
     ----------
-        mach_1: [1] 
+        mach_1: [1]
             Upstream Mach number
-        gamma: [1] 
+        gamma: [1]
             Specific heat ratio (Cp/Cv)
 
     Returns
@@ -666,21 +665,21 @@ def normal_shock(mach_1: float | ndarray,
                  gamma: float | ndarray
                  ) -> tuple[float | ndarray, float | ndarray]:
     """
-    Calculate the downstream Mach number, pressure ratio, and total pressure ratio 
+    Calculate the downstream Mach number, pressure ratio, and total pressure ratio
     for a normal shock.
 
     Parameters
     ----------
-        mach_1: [1] 
+        mach_1: [1]
             Upstream Mach number
-        gamma: [1] 
+        gamma: [1]
             Specific heat ratio (Cp/Cv)
 
     Returns
     -------
-        mach_2: [1] 
+        mach_2: [1]
             Downstream Mach number
-        p02/p01: [1] 
+        p02/p01: [1]
             Total pressure ratio across the shock
     """
     mach_2 = normal_shock_mach_2(mach_1, gamma)
@@ -697,7 +696,7 @@ def oblique_shock_delta_from_theta(mach_1: float | ndarray,
 
     Parameters
     ----------
-        mach_1: [1] 
+        mach_1: [1]
             Upstream Mach number
         theta: [rad]
             Shock angle
@@ -726,7 +725,8 @@ def oblique_shock_delta_from_theta(mach_1: float | ndarray,
     if np.any(~mach_normal_1_is_sup):
         warn("obliqueShockDeltaFromTheta is only valid "
         "for supersonic upstream normal Mach numbers (Mn1 > 1). "
-        "Results may be invalid for some inputs.")
+        "Results may be invalid for some inputs.",
+        stacklevel=2)
 
     delta[mach_normal_1_is_sup] = np_atan(2 * (1 / np_tan(theta[mach_normal_1_is_sup]))
                                           * (mach_normal_1[mach_normal_1_is_sup]**2 - 1)
@@ -751,7 +751,7 @@ def oblique_shock(mach_1: float | ndarray,
 
     Parameters
     ----------
-        mach_1: [1] 
+        mach_1: [1]
             Upstream Mach number
         delta: [rad]
             Deflection angle
@@ -764,15 +764,15 @@ def oblique_shock(mach_1: float | ndarray,
 
     Returns
     -------
-        mach_2: [1] 
+        mach_2: [1]
             Downstream Mach number
-        p02_p01: [1] 
+        p02_p01: [1]
             Total pressure ratio
         theta: [rad]
             Shock angle
     """
     def _error_func(theta: ndarray, delta: ndarray, mach_1: ndarray, gamma: ndarray) -> ndarray:
-        """Equation to solve for shock angle given deflection angle, 
+        """Equation to solve for shock angle given deflection angle,
             A positive delta means the shock angle guess is too small."""
         lhs = delta
         rhs = oblique_shock_delta_from_theta(mach_1=mach_1, theta=theta, gamma=gamma)
@@ -840,7 +840,7 @@ def oblique_shock_max_angle(mach_1: float | ndarray, gamma: float | ndarray) -> 
     """
     Calculate the oblique shock angle that results in the maximum deflection angle
     https://kyleniemeyer.github.io/gas-dynamics-notes/compressible-flows/oblique-shocks.html#equation-eq-delta-max
-    
+
     Parameters
     ----------
         mach_1: [1]
@@ -893,8 +893,8 @@ def oblique_shock_max_deflection(mach_1: float | ndarray,
 #endregion Oblique Shock Equations
 #region Rocket Nozzle Flow
 def get_cfv(gamma: float | ndarray, #pylint: disable=C0103
-            Ae_At: float | ndarray, #pylint: disable=C0103
-            Pe_Pc: Optional[float | ndarray] = None #pylint: disable=C0103
+            Ae_At: float | ndarray, #pylint: disable=C0103 #noqa: N803
+            Pe_Pc: float | ndarray | None = None #pylint: disable=C0103 #noqa: N803
             ) -> float | ndarray:
     """ Calculate the vacuum specific impulse coefficient (cfv) for a rocket nozzle.
     Parameters
@@ -912,29 +912,30 @@ def get_cfv(gamma: float | ndarray, #pylint: disable=C0103
             Vacuum nozzle specific impulse coefficient
     """
     if Pe_Pc is None:
-        Pe_Pc = P_ratio_from_mach(mach_from_area_ratio(Ae_At, gamma, supersonic=True), gamma)
+        Pe_Pc = P_ratio_from_mach(mach_from_area_ratio(Ae_At, gamma, supersonic=True), #noqa: N806
+                                  gamma)
     return ((2 * gamma**2 / (gamma - 1)) * (2 / (gamma + 1)) ** ((gamma + 1) / (gamma - 1))
            * (1 - Pe_Pc ** ((gamma - 1) / gamma))) ** 0.5 + Pe_Pc * Ae_At
 
 def get_cf_from_cfv(cfv: float | ndarray,
-                    Ae_At: float | ndarray, #pylint: disable=C0103
-                    Pc: float | ndarray, #pylint: disable=C0103
-                    Pb: float | ndarray #pylint: disable=C0103
+                    Ae_At: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                    Pc: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                    Pb: float | ndarray #pylint: disable=C0103 #noqa: N803
                     ) -> float | ndarray:
-    """Calculate the specific impulse coefficient (cf) 
+    """Calculate the specific impulse coefficient (cf)
     from the vacuum specific impulse coefficient (cfv)
-    
+
     Parameters
     ----------
         cfv: [1]
             Vacuum nozzle specific impulse coefficient
-        Ae_At: [1] 
+        Ae_At: [1]
             Area ratio (Ae/At)
         Pc: [Pa]
             Chamber pressure
         Pb: [Pa]
             Back pressure
-    
+
     Returns
     -------
         cf: [1]
@@ -944,10 +945,10 @@ def get_cf_from_cfv(cfv: float | ndarray,
     return cf
 
 def get_cf(gamma: float | ndarray,
-           Ae_At: float | ndarray, #pylint: disable=C0103
-           Pc: float | ndarray, #pylint: disable=C0103
-           Pb: float | ndarray, #pylint: disable=C0103
-           Pe_Pc: Optional[float | ndarray] = None #pylint: disable=C0103
+           Ae_At: float | ndarray, #pylint: disable=C0103 #noqa: N803
+           Pc: float | ndarray, #pylint: disable=C0103 #noqa: N803
+           Pb: float | ndarray, #pylint: disable=C0103 #noqa: N803
+           Pe_Pc: float | ndarray | None = None #pylint: disable=C0103 #noqa: N803
            ) -> float | ndarray:
     """Calculate the specific impulse coefficient (cf) for a given area ratio and pressure ratio
 
@@ -963,14 +964,15 @@ def get_cf(gamma: float | ndarray,
             Back pressure (Pa)
         Pe_Pc: [1]
             Exit to chamber pressure ratio (Pe/Pc). If not provided, will be calculated from Ae_At
-    
+
     Returns
     -------
         cf: [1]
             Specific impulse coefficient
     """
     if Pe_Pc is None:
-        Pe_Pc = P_ratio_from_mach(mach_from_area_ratio(Ae_At, gamma, supersonic=True), gamma)
+        Pe_Pc = P_ratio_from_mach(mach_from_area_ratio(Ae_At, gamma, supersonic=True), #noqa: N806
+                                  gamma)
     cfv = get_cfv(gamma, Ae_At, Pe_Pc)
     return get_cf_from_cfv(cfv, Ae_At, Pc, Pb)
 #endregion Rocket Nozzle Flow

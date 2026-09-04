@@ -17,18 +17,23 @@ Classes
 -------
 - PlotSaveClass: Class to manage saving matplotlib figures with optional customization.
 """
-from typing import Optional, overload
-from warnings import warn
 from os import mkdir
 from os.path import exists
+from typing import overload
+from warnings import warn
+
 from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from numpy import ndarray, pi as PI, linspace, cos as np_cos, sin as np_sin
+from matplotlib.figure import Figure
+from numpy import cos as np_cos
+from numpy import linspace, ndarray
+from numpy import pi as PI
+from numpy import sin as np_sin
+
 
 class PlotSaveClass:
     """Class to manage saving matplotlib figures with optional customization."""
-    def __init__(self, fig: Figure, ax: Axes | ndarray, file_name: Optional[str] = None) -> None:
+    def __init__(self, fig: Figure, ax: Axes | ndarray, file_name: str | None = None) -> None:
         self.fig = fig
         self.ax = ax
 
@@ -63,7 +68,8 @@ class PlotSaveClass:
         """
         if len(ouput_folder.split(".")) > 1:
             warn("Output folder appears to be a file path, not a folder path." \
-                 "Ignoring the figure's FileName and saving to the provided path.")
+                 f"Ignoring the figure's FileName and saving to the provided path. {ouput_folder}",
+                 stacklevel=2)
             file_name = ouput_folder.split("/")[-1].split("\\")[-1]
             ouput_folder = "/".join(
                 ouput_folder.split("fileName")[:-1]) # Remove the file name from the path
@@ -201,18 +207,18 @@ def unique_format(index: int) -> dict:
 def format_plot(fig: Figure,
                 ax: Axes,
                 aspect_ratio: float = ...,
-                dims: tuple[float, float] | 'str' = ...
+                dims: tuple[float, float] | str = ...
                 ) -> tuple[Figure, Axes]: ...
 @overload
 def format_plot(fig: Figure,
                 ax: ndarray,
                 aspect_ratio: float = ...,
-                dims: tuple[float, float] | 'str' = ...
+                dims: tuple[float, float] | str = ...
                 ) -> tuple[Figure, ndarray]: ...
 def format_plot(fig: Figure,
                 ax: Axes | ndarray,
-                aspect_ratio: Optional[float] = None,
-                dims: tuple[float, float] | 'str' = "default"
+                aspect_ratio: float | None = None,
+                dims: tuple[float, float] | str = "default"
                 ) -> tuple[Figure, Axes | ndarray]:
     """Formats the given matplotlib figure and axes for better visualization.
 
@@ -326,8 +332,8 @@ def plot_circle(ax: Axes,
 
 def plot_debug(x: float | ndarray,
                y: float | ndarray,
-               fig: Optional[Figure] = None,
-               ax: Optional[Axes] = None,
+               fig: Figure | None = None,
+               ax: Axes | None = None,
                x_label: str = "x",
                y_label: str = "y",
                title: str = "Debug Plot") -> None | tuple[Figure, Axes]:

@@ -47,7 +47,6 @@ def mach_supersonic() -> np.ndarray:
     """Supersonic Mach numbers avoiding the M -> 1 singularity, [1]."""
     return np.array([1.05, 1.5, 2.0, 3.0, 5.0, 8.0], dtype=np.float64)
 
-
 @pytest.fixture(scope="session")
 def mach_subsonic() -> np.ndarray:
     """Subsonic Mach numbers avoiding the M -> 0 singularity, [1]."""

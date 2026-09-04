@@ -14,19 +14,16 @@ Four kinds of test appear here, in rough order of value:
 4. Known bugs    -- xfail(strict=True), so the test suite fails loudly when
                     a bug is fixed and the marker is left behind.
 
-All angles are radians.  All pressures are Pa.  Ratios are dimensionless [1].
+All Units are SI base (Radians for angles).
 """
-
 import warnings
 
 import numpy as np
 import pytest
 import scipy.optimize as scipy_optimize
-
-from supporting_funcs.physics import compressible_flow as cf
-
 from tests.physics.conftest import RTOL_SOLVER, RTOL_TABLE
 
+from supporting_funcs.physics import compressible_flow as cf
 
 # ---------------------------------------------------------------------------
 # Reference data (NACA TR-1135, gamma = 1.4)
@@ -182,9 +179,9 @@ class TestMachFromStagnation:
     """ Test the mach_from_stagnation function."""
     def test_guard_against_invalid_gamma(self, gamma_sweep):
         """Test that the function returns NaN for invalid gamma values."""
-        T0 = 300.0 #pylint: disable=C0103
-        P0 = 101325.0 #pylint: disable=C0103
-        R = 287.05 #pylint: disable=C0103
+        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
+        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
+        R = 287.05 #pylint: disable=C0103 #noqa: N806
         area = 11.0
         mdot = 1.0
         invalid_gammas = np.asarray([1.0, 0.9, 0.5])
@@ -212,19 +209,19 @@ class TestMachFromStagnation:
     def test_calculation(self, gamma_sweep, mach_sweep):
         """Value Test:
         Test that the function returns the correct Mach number"""
-        T0 = 300.0 #pylint: disable=C0103
-        P0 = 101325.0 #pylint: disable=C0103
-        R = 287.05 #pylint: disable=C0103
-        A = 11.0 #pylint: disable=C0103
+        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
+        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
+        R = 287.05 #pylint: disable=C0103 #noqa: N806
+        A = 11.0 #pylint: disable=C0103 #noqa: N806
 
         rho_0 = P0 / (R * T0)
         for gamma in gamma_sweep:
             rhos = cf.rho_ratio_from_mach(mach_sweep, gamma) * rho_0
-            Ts = T0 * cf.T_ratio_from_mach(mach_sweep, gamma) #pylint: disable=C0103
+            Ts = T0 * cf.T_ratio_from_mach(mach_sweep, gamma) #pylint: disable=C0103 #noqa: N806
             mdots = rhos * np.sqrt(gamma * R * Ts) * mach_sweep * A
             mach_test = cf.mach_from_stagnation(T0, P0, mdots, gamma, R, A, supersonic=mach_sweep>1)
             rho_test = cf.rho_ratio_from_mach(mach_test, gamma) * rho_0
-            Ts_test = T0 * cf.T_ratio_from_mach(mach_test, gamma) #pylint: disable=C0103
+            Ts_test = T0 * cf.T_ratio_from_mach(mach_test, gamma) #pylint: disable=C0103 #noqa: N806
             c_test = np.sqrt(gamma * R * Ts_test)
             mdot_test = rho_test * c_test * mach_test * A
 
@@ -235,9 +232,9 @@ class TestMachFromStagnation:
     def test_mach_from_stagnation_rejects_non_boolean_supersonic(self, gamma_air):
         """Test that the function rejects non-boolean values for the supersonic parameter."""
         mach_test = 2.312
-        T0 = 300.0 #pylint: disable=C0103
-        P0 = 101325.0 #pylint: disable=C0103
-        R = 287.05 #pylint: disable=C0103
+        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
+        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
+        R = 287.05 #pylint: disable=C0103 #noqa: N806
         area = 11.0
         mdot = area * cf.m_flux_from_stagnation(T0, P0, gamma_air, R, mach_test)
 
@@ -269,7 +266,7 @@ class TestMachFromAreaRatio:
 
     @pytest.mark.parametrize("mach_expected", [1.5, 2.0, 3.0, 4.5])
     def test_supersonic_roundtrip_scalar(self, mach_expected, gamma_air):
-        """Test the value of mach_from_area_ratio for a given area ratio matches 
+        """Test the value of mach_from_area_ratio for a given area ratio matches
         the expected Mach number from the isentropic relations.
         """
         a_rat = cf.area_ratio_from_mach(mach_expected, gamma_air)
@@ -545,7 +542,7 @@ class TestObliqueShockAngles:
     def test_max_deflection_matches_reference(
         self, mach_1, _, delta_max_deg, gamma_air
     ):
-        """Value Test: Test that the maximum deflection angle for an 
+        """Value Test: Test that the maximum deflection angle for an
         oblique shock matches the reference values."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -622,13 +619,13 @@ class TestThrustCoefficients:
     """Test the thrust coefficient functions."""
     def test_cf(self, gamma_sweep):
         "Value Test: Check that the thrust coefficient matches the definition."
-        T0 = 3000.0 #pylint: disable=C0103
+        T0 = 3000.0 #pylint: disable=C0103 #noqa: N806
         cp = 1011.0
         pressure_chamber_pa = 2.0e6
         pressure_back_pa = 101325.0
 
         for gamma in gamma_sweep:
-            R = cp * (gamma - 1.0) / gamma #pylint: disable=C0103
+            R = cp * (gamma - 1.0) / gamma #pylint: disable=C0103 #noqa: N806
             for area_ratio in [1.0, 2.0, 4.0, 10.0]:
                 mach_exit = cf.mach_from_area_ratio(area_ratio, gamma, supersonic=True)
                 vel_exit = np.sqrt(
@@ -930,7 +927,7 @@ class TestTypeContract:
         ],
     )
     def test_broadcasting_shape(self, name):
-        """Implementation Test: 
+        """Implementation Test:
         Check that the function can handle broadcasting of Mach number against gamma."""
         mach = np.linspace(1.5, 4.0, 7)[:, None]
         gamma = np.array([1.2, 1.3, 1.4])[None, :]
@@ -938,11 +935,11 @@ class TestTypeContract:
         assert result.shape == (7, 3)
 
     @pytest.mark.parametrize(
-        "name", 
+        "name",
         ["P_ratio_from_mach", "T_ratio_from_mach", "h_ratio_from_mach", "normal_shock_mach_2"]
     )
     def test_scalar_and_array_agree(self, name, gamma_air):
-        """Implementation Test: 
+        """Implementation Test:
         Check that the function returns the same values for scalar and array inputs."""
         func = getattr(cf, name)
         mach = np.array([1.5, 2.0, 3.0])

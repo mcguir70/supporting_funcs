@@ -2,6 +2,7 @@
 A collection of math helper functions."""
 import numpy as np
 
+
 def solve_cubic_positive_real(
     a: float, b: float, c: float, d: float, imag_tol: float = 1e-9
 ) -> np.ndarray:

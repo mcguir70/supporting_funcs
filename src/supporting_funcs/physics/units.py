@@ -4,7 +4,6 @@ This module provides the OutputFormatting class, which allows users to specify
 the desired output units for various physical quantities, including pressure,
 temperature, length, mass, force, time, and volume flow. It also provides methods
 for converting between different units and for formatting output strings."""
-from typing import Optional
 from pint import Unit, UnitRegistry
 from pint.facets.plain import PlainUnit
 from scipy import constants as csp
@@ -15,11 +14,11 @@ Q_ = UREG.Quantity #type: ignore
 class OutputFormatting:
     """Class to manage output formatting and unit conversions for physics calculations."""
     def __init__(self,
-                 output_SI: bool = True, #pylint: disable=C0103
-                 vol_flow_unit: Optional[Unit] = None,
-                 mass_unit: Optional[Unit] = None,
-                 pressure_unit: Optional[Unit] = None,
-                 vol_flow_unit_str: Optional[str] = None):
+                 output_SI: bool = True, #pylint: disable=C0103 #noqa: N803
+                 vol_flow_unit: Unit | None = None,
+                 mass_unit: Unit | None = None,
+                 pressure_unit: Unit | None = None,
+                 vol_flow_unit_str: str | None = None):
         self.output_SI = output_SI #pylint: disable=C0103
         if mass_unit is not None:
             if isinstance(mass_unit, Unit):
@@ -66,11 +65,11 @@ class OutputFormatting:
                 raise TypeError("volFlowUnitStr must be a string.")
 
     @property
-    def output_SI(self): #pylint: disable=C0103
+    def output_SI(self): #pylint: disable=C0103 #noqa: N802
         """Whether to output results in SI units (True) or any other units (False)."""
         return self._output_SI
     @output_SI.setter
-    def output_SI(self, value: bool): #pylint: disable=C0103
+    def output_SI(self, value: bool): #pylint: disable=C0103 #noqa: N802
         """Set the output unit system. If True, use SI units; if False, use specified units."""
         self._output_SI = value #pylint: disable=C0103
         if value:
@@ -176,7 +175,7 @@ class OutputFormatting:
             return self.length_unit ** 3 / self.time_unit
         return self._vol_flow_unit
     @vol_flow_unit.setter
-    def vol_flow_unit(self, value: Optional[Unit | PlainUnit]):
+    def vol_flow_unit(self, value: Unit | PlainUnit | None):
         if value is None:
             self._vol_flow_unit = self.length_unit ** 3 / self.time_unit
             self._vol_flow_unit_dbl = self.length_unit_dbl ** 3 / self.time_unit_dbl
@@ -195,7 +194,7 @@ class OutputFormatting:
         """Volume flow unit as a string."""
         return self._vol_flow_unit_str
     @vol_flow_unit_str.setter
-    def vol_flow_unit_str(self, value: Optional[str]):
+    def vol_flow_unit_str(self, value: str | None):
         if value is None:
             self._vol_flow_unit_str = str(self.vol_flow_unit)
         elif isinstance(value, str):

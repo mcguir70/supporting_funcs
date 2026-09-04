@@ -7,7 +7,6 @@ Functions:
 - toc_tic: Convenience function to call toc() and then immediately restart the timer with tic().
 """
 from time import time_ns
-# from typing import Optional
 
 _TIME_START_DICT: dict[str, int] = {'None': -1}
 def tic(timer_id: str = 'None'):

@@ -6,7 +6,7 @@ Useful to allow actions to be taken at each full step of the integration, such a
 
 # import numpy as np
 raise NotImplementedError("All this was AI generated and has not been tested at all, " \
-						  "but looked right from https://lpsa.swarthmore.edu/NumInt/NumIntFourth.html")
+                          "but looked right https://lpsa.swarthmore.edu/NumInt/NumIntFourth.html")
 
 # ArrayLike = np.ndarray | Sequence[float] | float
 

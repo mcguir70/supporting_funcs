@@ -1,7 +1,7 @@
 """ Bartz equation parameters for heat transfer calculations. """
 import scipy.constants as csp
-from numpy import ndarray
 from CEA_Wrap import Output as CEAOutput
+from numpy import ndarray
 
 G0 = csp.g  # [m/s^2] standard gravity
 G0_FT = G0 / csp.foot  # [ft/s^2] standard gravity
@@ -12,17 +12,17 @@ class BartzParamClass:
                  mu_0: float,
                  c_p_0: float,
                  pran_0: float,
-                 Pc: float, #pylint: disable=C0103
+                 Pc: float, #pylint: disable=C0103 #noqa: N803
                  c_star: float,
                  r_throat_curve: float,
-                 T_0: float, #pylint: disable=C0103
+                 T_0: float, #pylint: disable=C0103 #noqa: N803
                  gamma: ndarray | float,
                  mach: ndarray | float,
                  area_rat: ndarray | float,
                  omega=0.6):
         """
         Generate the temperature variables for the Bartz equation.
-        
+
         Parameters
         ----------
         d_throat: [m]
@@ -50,7 +50,7 @@ class BartzParamClass:
         omega: [1]
             Temperature exponent of viscosity equation
         """
-        self.sigma_a_mult, self.sigma_b_mult, self.sigma_c_exp, self.hg_term, self.Tr_scalar = bartz_gen_temp_variables( #pylint: disable=C0103, C0301
+        self.sigma_a_mult, self.sigma_b_mult, self.sigma_c_exp, self.hg_term, self.Tr_scalar = bartz_gen_temp_variables( #pylint: disable=C0103, C0301 #noqa: E501
             d_throat=d_throat,
             mu_0=mu_0,
             c_p_0=c_p_0,
@@ -66,7 +66,7 @@ class BartzParamClass:
         )
 
     def bartz_with_temp_variables(self,
-                                  T_wall: ndarray | float #pylint: disable=C0103
+                                  T_wall: ndarray | float #pylint: disable=C0103 #noqa: N803
                                   ) -> ndarray | float:
         """
         Calculate the heat transfer coefficient using the Bartz equation.
@@ -92,7 +92,7 @@ class BartzParamClass:
         return hg
 
     def bartz_with_temp_variables_imp(self,
-                                      T_wall_R: ndarray | float #pylint: disable=C0103
+                                      T_wall_R: ndarray | float #pylint: disable=C0103 #noqa: N803
                                       ) -> ndarray | float:
         """
         Calculate the heat transfer coefficient using the Bartz equation
@@ -132,7 +132,7 @@ def create_bartz_param_class(cea_result: CEAOutput,
         Curvature of the throat radius
     mach: [1]
         Mach number at location to report (default is 1.0)
-    area_rat: 
+    area_rat:
         area ratio at the throat (default is 1.0)
 
     Returns
@@ -157,13 +157,13 @@ def create_bartz_param_class(cea_result: CEAOutput,
 
 def calc_hg_bartz_imp(d_throat_in: float | ndarray,
                   mu_0_psi_s: float | ndarray,
-                  c_p_0_btu_lbm_R: float | ndarray, #pylint: disable=C0103
+                  c_p_0_btu_lbm_R: float | ndarray, #pylint: disable=C0103 #noqa: N803
                   pran_0: float | ndarray,
-                  P_c_psi: float | ndarray, #pylint: disable=C0103
+                  P_c_psi: float | ndarray, #pylint: disable=C0103 #noqa: N803
                   c_star_ft_s: float | ndarray,
                   r_throat_curve_in: float | ndarray,
-                  T_wall_R: float | ndarray, #pylint: disable=C0103
-                  T_0_R: float | ndarray, #pylint: disable=C0103
+                  T_wall_R: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                  T_0_R: float | ndarray, #pylint: disable=C0103 #noqa: N803
                   gamma: float | ndarray,
                   mach: float | ndarray,
                   inv_area_rat: float | ndarray,
@@ -199,7 +199,7 @@ def calc_hg_bartz_imp(d_throat_in: float | ndarray,
             Mach number
         omega: [1]
             Temperature exponent of viscosity equation
-    
+
     Returns
     -------
         hg_btu_in2_s_R: Heat transfer coefficient (Btu/(in^2*sec*R))
@@ -217,7 +217,7 @@ def calc_hg_bartz_imp(d_throat_in: float | ndarray,
             * (d_throat_in / r_throat_curve_in) ** 0.1
             ) * inv_area_rat**0.9 * sigma
 
-def bartz_recovery_temp(T_0: float | ndarray, #pylint: disable=C0103
+def bartz_recovery_temp(T_0: float | ndarray, #pylint: disable=C0103 #noqa: N803
                         pran_0: float | ndarray,
                         gamma: float | ndarray,
                         mach: float | ndarray
@@ -249,17 +249,17 @@ def calc_hg_bartz(d_throat: float | ndarray,
                    mu_0: float | ndarray,
                    c_p_stag: float | ndarray,
                    pran_0: float | ndarray,
-                   P_c: float | ndarray, #pylint: disable=C0103
+                   P_c: float | ndarray, #pylint: disable=C0103 #noqa: N803
                    c_star: float | ndarray,
                    r_throat_curve: float | ndarray,
-                   T_wall: float | ndarray, #pylint: disable=C0103
-                   T_0: float | ndarray, #pylint: disable=C0103
+                   T_wall: float | ndarray, #pylint: disable=C0103 #noqa: N803
+                   T_0: float | ndarray, #pylint: disable=C0103 #noqa: N803
                    gamma: float | ndarray,
                    mach: float | ndarray,
                    inv_area_rat: float | ndarray):
-    """    
+    """
     Bartz with SI inputs
-    
+
     Parameters
     ----------
     d_throat: [m]
@@ -293,14 +293,14 @@ def calc_hg_bartz(d_throat: float | ndarray,
     d_throat = d_throat / csp.inch # convert from m to in
     mu_0 = mu_0 / csp.psi # convert from Pa*s to lbf/(in*s)
     c_p_stag = c_p_stag / (csp.Btu / (csp.lb * csp.degree_Fahrenheit))
-    P_c = P_c / csp.psi
+    P_c = P_c / csp.psi #noqa: N806
 
     c_star = c_star / csp.foot
     r_throat_curve = r_throat_curve / csp.inch
-    T_wall = T_wall / csp.degree_Fahrenheit
-    T_0 = T_0 / csp.degree_Fahrenheit
+    T_wall = T_wall / csp.degree_Fahrenheit #noqa: N806
+    T_0 = T_0 / csp.degree_Fahrenheit #noqa: N806
 
-    hg_btu_in2_s_R = calc_hg_bartz_imp(d_throat_in=d_throat, #pylint: disable=C0103
+    hg_btu_in2_s_R = calc_hg_bartz_imp(d_throat_in=d_throat, #pylint: disable=C0103 #noqa: N806
                            mu_0_psi_s=mu_0,
                            c_p_0_btu_lbm_R=c_p_stag,
                            pran_0=pran_0,
@@ -316,7 +316,7 @@ def calc_hg_bartz(d_throat: float | ndarray,
         csp.Btu / (csp.inch**2 * csp.degree_Fahrenheit))
     return hg
 
-def bartz_with_temp_variables_imp(T_wall_R: ndarray | float, #pylint: disable=C0103
+def bartz_with_temp_variables_imp(T_wall_R: ndarray | float, #pylint: disable=C0103 #noqa: N803
                                   sigma_a_mult_imp: ndarray | float,
                                   sigma_b_mult_imp: ndarray | float,
                                   sigma_c_exp_imp: ndarray | float,
@@ -347,7 +347,7 @@ def bartz_with_temp_variables_imp(T_wall_R: ndarray | float, #pylint: disable=C0
     hg = hg_term_imp * sigma
     return hg
 
-def bartz_with_temp_variables(T_wall: ndarray | float, #pylint: disable=C0103
+def bartz_with_temp_variables(T_wall: ndarray | float, #pylint: disable=C0103 #noqa: N803
                               bartz_params: BartzParamClass
                               ) -> ndarray | float:
     """
@@ -378,10 +378,10 @@ def bartz_gen_temp_variables(d_throat: float,
                              mu_0: float,
                              c_p_0: float,
                              pran_0: float,
-                             P_c: float, #pylint: disable=C0103
+                             P_c: float, #pylint: disable=C0103 #noqa: N803
                              c_star: float,
                              r_throat_curve: float,
-                             T_0: float, #pylint: disable=C0103
+                             T_0: float, #pylint: disable=C0103 #noqa: N803
                              gamma: ndarray | float,
                              mach: ndarray | float,
                              inv_area_ratio: ndarray | float, omega: ndarray | float = 0.6):
@@ -412,7 +412,7 @@ def bartz_gen_temp_variables(d_throat: float,
             Mach number
         inv_area_ratio: [1]
             Inverse area ratio (Astar / A)
-    
+
     Returns
     -------
     sigma_a_mult_imp: [1/R]
@@ -431,10 +431,10 @@ def bartz_gen_temp_variables(d_throat: float,
     mu_0 = mu_0 / (csp.lbf / (csp.inch**2))  # Convert to lbf/(in*s)
     c_p_0 = c_p_0 / (csp.Btu / (csp.lb * csp.degree_Fahrenheit))  # Convert to Btu/(lbm*R)
     # pran_0 is dimensionless
-    P_c = P_c / csp.psi  # Convert to psi
+    P_c = P_c / csp.psi  # Convert to psi #noqa: N806
     c_star = c_star / csp.foot  # Convert to ft/s
     r_throat_curve = r_throat_curve / csp.inch  # Convert to inches
-    T_0 = T_0 / csp.degree_Fahrenheit  # Convert to R
+    T_0 = T_0 / csp.degree_Fahrenheit  # Convert to R #noqa: N806
     # gamma is dimensionless
     # mach is dimensionless
     # inv_area_ratio is dimensionless
@@ -448,6 +448,6 @@ def bartz_gen_temp_variables(d_throat: float,
                * (d_throat / r_throat_curve) ** 0.1
                * (inv_area_ratio)**0.9
     )
-    Tr_scalar = 1 + (gamma - 1) / 2 * pran_0 * mach ** 2 #pylint: disable=C0103
+    Tr_scalar = 1 + (gamma - 1) / 2 * pran_0 * mach ** 2 #pylint: disable=C0103 #noqa: N806
 
     return sigma_a_mult_imp, sigma_b_mult_imp, sigma_c_exp_imp, hg_term_imp, Tr_scalar

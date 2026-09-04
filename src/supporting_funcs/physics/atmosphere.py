@@ -1,22 +1,19 @@
 """# atmosphere.py
-Simulation of atmospheric properties. 
+Simulation of atmospheric properties.
 
 ## Functions and Classes
 `AirProperties`: (Class)
-    class uses USSA1976 to compute standard atmospheric properties. 
+    class uses USSA1976 to compute standard atmospheric properties.
 `get_cp_air_properties`: (function)
-    uses CoolProp to compute real-gas properties 
-    at a given pressure and temperature. 
+    uses CoolProp to compute real-gas properties
+    at a given pressure and temperature.
 `plot_air_properties`: (function)
-    function plots air properties vs altitude. 
+    function plots air properties vs altitude.
 `interp_air_properties`: (function)
     function interpolates air properties from an array of air properties.
 """
-
-# Connor McGuire
-# Simulation of atmospheric properties
 from enum import IntEnum
-from typing import Optional, overload
+from typing import overload
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,6 +21,7 @@ from CoolProp.HumidAirProp import HAPropsSI
 from ussa1976 import compute as ussa1976_compute
 
 from supporting_funcs.coding.type_hints import OneDFloatArray
+
 
 class AirPropertiesIndex(IntEnum):
     """Enum for indexing air properties in an array"""
@@ -45,7 +43,7 @@ class AirProperties:
     @property
     def atmosphere(self):
         """Get the atmosphere data
-        
+
         Returns
         -------
         atmosphere: dict
@@ -71,10 +69,10 @@ class AirProperties:
                        property_index: AirPropertiesIndex
                        ) -> float: ...
     def get_properties(self, altitude: float,
-                       property_index: Optional[AirPropertiesIndex | None] = None
+                       property_index: AirPropertiesIndex | None = None
                        ) -> dict[str, float] | float:
         """Get atmospheric properties at a given altitude using USSA1976
-            
+
             Parameters
             ----------
             altitude: [m]
@@ -116,7 +114,7 @@ class AirProperties:
 
     def get_density(self, altitude: float) -> float:
         """Get air density at a given altitude using USSA1976
-        
+
         Parameters
         ----------
         altitude: [m]
@@ -236,7 +234,7 @@ def plot_air_properties(air_array: np.ndarray) -> None:
 
 def interp_air_properties(air_array: np.ndarray, altitude: float) -> OneDFloatArray:
     """Interpolate air properties at a given altitude from airArray
-        
+
         Parameters
         ----------
         air_array: [See AirPropertiesIndex]
