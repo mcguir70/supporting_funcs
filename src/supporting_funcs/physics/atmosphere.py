@@ -219,7 +219,7 @@ class AirProperties:
     def get_speed_of_sound(self, altitude: float) -> float: ...
     @overload
     def get_speed_of_sound(self, altitude: FloatArray) -> FloatArray: ...
-    def get_speed_of_sound(self, altitude: float | FloatArray) -> float | FloatArray:
+    def get_speed_of_sound(self, altitude: FloatOrArray) -> FloatOrArray:
         """Get speed of sound at a given altitude using USSA1976
 
             Parameters
@@ -234,6 +234,31 @@ class AirProperties:
         """
         return np.interp(altitude, self._altitudes, self._son)
     get_cs = get_speed_of_sound
+
+    @overload
+    def get_altitude_equivalent(self, pressure: float) -> float: ...
+    @overload
+    def get_altitude_equivalent(self, pressure: FloatArray) -> FloatArray: ...
+    def get_altitude_equivalent(self, pressure: FloatOrArray) -> FloatOrArray:
+        """Get the altitude equivalent of a given pressure using USSA1976
+
+            Parameters
+            ----------
+            pressure: [Pa]
+                pressure
+
+            Returns
+            -------
+            altitude: [m]
+                altitude equivalent of the given pressure
+        """
+        # Use numpy's interp function to find the altitude corresponding to the given pressure
+        altitude = np.interp(pressure,
+                             self._p[::-1],
+                             self._altitudes[::-1],
+                             left=np.nan,
+                             right=np.nan)
+        return altitude
 
 def get_cp_air_properties(pressure: float,
                           temperature: float,
