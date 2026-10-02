@@ -1,25 +1,29 @@
 """Type aliases for common array types used in physics calculations."""
 
-from typing import Any, TypeAlias
+from typing import Any
 
 from matplotlib.axes import Axes
 from numpy import bool as np_bool
-from numpy import dtype, float64, ndarray
+from numpy import dtype, float64, int64, ndarray, uint64
 from numpy.typing import NDArray
 
-OneDArray: TypeAlias = ndarray[tuple[int], dtype[float64]] # pylint: disable=C0103
-OneDBoolArray: TypeAlias = ndarray[tuple[int], dtype[np_bool]] # pylint: disable=C0103
-OneDFloatArray: TypeAlias = ndarray[tuple[int], dtype[float64]] # pylint: disable=C0103
-TwoDArray: TypeAlias = ndarray[tuple[int, int], dtype[float64]] # pylint: disable=C0103
-NPFloatArray: TypeAlias = ndarray[tuple[int] | tuple[int, int], dtype[float64]]
+type OneDArray = ndarray[tuple[int], dtype[float64]]
+type OneDBoolArray = ndarray[tuple[int], dtype[np_bool]]
+type OneDIntArray = ndarray[tuple[int], dtype[int64]]
+type OneDUIntArray = ndarray[tuple[int], dtype[uint64]]
+type OneDFloatArray = ndarray[tuple[int], dtype[float64]]
+type TwoDArray = ndarray[tuple[int, int], dtype[float64]]
+type NPFloatArray = ndarray[tuple[int] | tuple[int, int], dtype[float64]]
 
-AxesArr: TypeAlias = ndarray[tuple[int] | tuple[int, int], dtype[Any]]
+type AxesArr = ndarray[tuple[int] | tuple[int, int], dtype[Any]]
 # Matplotlib just returns an ndarray of Axes objects, so we can't specify the dtype as Axes.
 
-FloatArray: TypeAlias = NDArray[float64]
-BoolArray: TypeAlias = NDArray[np_bool]
+type IntArray = NDArray[int64]
+type UIntArray = NDArray[uint64]
+type FloatArray = NDArray[float64]
+type BoolArray = NDArray[np_bool]
 
-FloatOrArray: TypeAlias = float | FloatArray
-BoolOrArray: TypeAlias = bool | BoolArray
+type FloatOrArray = float | FloatArray
+type BoolOrArray = bool | BoolArray
 
-AxesOrArray: TypeAlias = Axes | AxesArr
+type AxesOrArray = Axes | AxesArr

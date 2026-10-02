@@ -33,7 +33,6 @@ class TestAtmosphere:
         assert np.all(np.isnan(self.air_properties.get_altitude_equivalent(mixed_invalid_pressures))
                 == mixed_invalid_pressure_mask)
 
-
     def check_round_trip(self, pressure):
         """Check that the get_altitude_equivalent function is the inverse of the get_pressure function.""" # noqa: E501
         altitude = self.air_properties.get_altitude_equivalent(pressure)

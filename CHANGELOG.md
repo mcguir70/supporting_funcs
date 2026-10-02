@@ -1,6 +1,10 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.1.0
+### 2026-10-02
+Added a few type aliases to the type_hints module.
+
 ## 0.0.2
 ### Sep 2026
 Added a get_altitude_equivalent function to the atmosphere model. This function returns the altitude equivalent of a given pressure value.
