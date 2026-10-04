@@ -30,10 +30,12 @@ from numpy import linspace, ndarray
 from numpy import pi as PI
 from numpy import sin as np_sin
 
+from supporting_funcs.coding.type_hints import AxesArr, AxesOrArray, MatPlotLibFigAxes
+
 
 class PlotSaveClass:
     """Class to manage saving matplotlib figures with optional customization."""
-    def __init__(self, fig: Figure, ax: Axes | ndarray, file_name: str | None = None) -> None:
+    def __init__(self, fig: Figure, ax: AxesOrArray, file_name: str | None = None) -> None:
         self.fig = fig
         self.ax = ax
 
@@ -211,15 +213,15 @@ def format_plot(fig: Figure,
                 ) -> tuple[Figure, Axes]: ...
 @overload
 def format_plot(fig: Figure,
-                ax: ndarray,
+                ax: AxesArr,
                 aspect_ratio: float = ...,
                 dims: tuple[float, float] | str = ...
-                ) -> tuple[Figure, ndarray]: ...
+                ) -> tuple[Figure, AxesArr]: ...
 def format_plot(fig: Figure,
-                ax: Axes | ndarray,
+                ax: AxesOrArray,
                 aspect_ratio: float | None = None,
                 dims: tuple[float, float] | str = "default"
-                ) -> tuple[Figure, Axes | ndarray]:
+                ) -> MatPlotLibFigAxes:
     """Formats the given matplotlib figure and axes for better visualization.
 
     Parameters

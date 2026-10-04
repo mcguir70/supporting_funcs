@@ -3,6 +3,7 @@
 from typing import Any
 
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from numpy import bool as np_bool
 from numpy import dtype, float64, int64, ndarray, uint64
 from numpy.typing import NDArray
@@ -16,6 +17,7 @@ type TwoDArray = ndarray[tuple[int, int], dtype[float64]]
 type NPFloatArray = ndarray[tuple[int] | tuple[int, int], dtype[float64]]
 
 type AxesArr = ndarray[tuple[int] | tuple[int, int], dtype[Any]]
+type MatPlotLibFigAxes = tuple[Figure, Axes | AxesArr]
 # Matplotlib just returns an ndarray of Axes objects, so we can't specify the dtype as Axes.
 
 type IntArray = NDArray[int64]

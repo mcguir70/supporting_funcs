@@ -1,7 +1,10 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
-## 0.1.0
+## 0.0.4
+Added a matplotlib type alias to the type_hints module, and updated the format_plot function to use this more accurate type hint.
+
+## 0.0.3
 ### 2026-10-02
 Added a few type aliases to the type_hints module.
 
