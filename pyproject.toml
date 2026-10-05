@@ -13,7 +13,7 @@ dependencies = [
     "matplotlib",
     "ussa1976",
     "CoolProp",
-    "CEA-Wrap",
+    "cea",
 ]
 
 [project.optional-dependencies]
