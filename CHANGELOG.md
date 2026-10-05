@@ -1,7 +1,12 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.0.5
+### 2026-10-05
+Added cea_wrapper.py under physics. This allows for the use of the CEA solver in Python.
+
 ## 0.0.4
+### 2026-10-04
 Added a matplotlib type alias to the type_hints module, and updated the format_plot function to use this more accurate type hint.
 
 ## 0.0.3
