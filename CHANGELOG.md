@@ -1,6 +1,10 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.0.6
+### 2026-10-12
+Removed the cea_wrapper.pyi file. All of the overload type hints have been added directly to the cea_wrapper.py file, so the pyi file is no longer necessary (.pyi was missing some .py functions so this way there is no longer a mismatch).
+
 ## 0.0.5
 ### 2026-10-05
 Added cea_wrapper.py under physics. This allows for the use of the CEA solver in Python.

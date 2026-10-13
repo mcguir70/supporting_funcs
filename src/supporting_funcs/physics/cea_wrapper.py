@@ -17,6 +17,7 @@ output_solution:
 #TODO: Add Frozen ability
 #TODO: Add unchoked ability?
 from collections.abc import Sequence
+from typing import overload
 from warnings import warn
 
 import cea
@@ -399,7 +400,7 @@ class PropellentMixture:
         thrust/area: [N/m²]
             Thrust for the given throat area
         """
-        mdot = self.solution.gas_velocity[1] * self.solution.density[1] 
+        mdot = self.solution.gas_velocity[1] * self.solution.density[1]
         isp_v = self.solution.isp_vacuum[-1]
         return mdot * isp_v * csp.g # kg/s * s * N/kg = N
 
@@ -567,6 +568,10 @@ class CEAOutput:
         """Get the gas velocity for the solution [m/s]."""
         return self.sonic_velocity * self.mach
 
+    @overload
+    def get_isp_vacuum(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_isp_vacuum(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_isp_vacuum(self, *, ae_at: FloatOrArray | None = None) -> FloatOrArray:
         """Interpolate the vacuum specific impulse for the given expansion ratio.
 
@@ -588,6 +593,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.isp_vacuum)
     get_isp_v = get_isp_vacuum # alias
 
+    @overload
+    def get_isp_ideal(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_isp_ideal(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_isp_ideal(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the ideal specific impulse for the given expansion ratio.
 
@@ -606,6 +615,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.isp_ideal)
     get_isp_i = get_isp_ideal # alias
 
+    @overload
+    def get_temperature(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_temperature(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_temperature(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static temperature for the given expansion ratio.
 
@@ -624,6 +637,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.temperature)
     get_T = get_temperature #noqa:N815 # alias
 
+    @overload
+    def get_pressure(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_pressure(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_pressure(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static pressure for the given expansion ratio.
 
@@ -642,6 +659,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.pressure)
     get_P = get_pressure #noqa:N815 # alias
 
+    @overload
+    def get_density(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_density(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_density(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static density for the given expansion ratio.
 
@@ -660,6 +681,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.density)
     get_rho = get_density # alias
 
+    @overload
+    def get_enthalpy(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_enthalpy(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_enthalpy(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static enthalpy for the given expansion ratio.
 
@@ -678,6 +703,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.enthalpy)
     get_h = get_enthalpy # alias
 
+    @overload
+    def get_internal_energy(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_internal_energy(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_internal_energy(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static internal energy for the given expansion ratio.
 
@@ -696,6 +725,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.internal_energy)
     get_u = get_internal_energy # alias
 
+    @overload
+    def get_gibbs_energy(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_gibbs_energy(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_gibbs_energy(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static Gibbs energy for the given expansion ratio.
 
@@ -714,6 +747,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.gibbs_energy)
     get_g = get_gibbs_energy # alias
 
+    @overload
+    def get_entropy(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_entropy(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_entropy(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the static entropy for the given expansion ratio.
 
@@ -732,6 +769,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.entropy)
     get_s = get_entropy # alias
 
+    @overload
+    def get_mach(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_mach(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_mach(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the Mach number for the given expansion ratio.
 
@@ -750,6 +791,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.mach)
     # no M alias here to prevent confusion with molecular weight
 
+    @overload
+    def get_overall_molecular_weight(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_overall_molecular_weight(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_overall_molecular_weight(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the overall molecular weight for the given expansion ratio.
 
@@ -767,6 +812,10 @@ class CEAOutput:
             return self.overall_molecular_weight[0]
         return np.interp(ae_at, self.ae_at, self.overall_molecular_weight)
 
+    @overload
+    def get_gaseous_molecular_weight(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_gaseous_molecular_weight(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_gaseous_molecular_weight(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the gaseous molecular weight for the given expansion ratio.
 
@@ -785,6 +834,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.gaseous_molecular_weight)
     get_MW_gas = get_gaseous_molecular_weight # noqa: N815 # alias
 
+    @overload
+    def get_constant_pressure_specific_heat(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_constant_pressure_specific_heat(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_constant_pressure_specific_heat(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the constant pressure specific heat for the given expansion ratio.
 
@@ -803,6 +856,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.specific_heat_capacity_constant_pressure)
     get_cp = get_constant_pressure_specific_heat # alias
 
+    @overload
+    def get_constant_volume_specific_heat(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_constant_volume_specific_heat(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_constant_volume_specific_heat(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the constant volume specific heat for the given expansion ratio.
 
@@ -821,6 +878,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.specific_heat_capacity_constant_volume)
     get_cv = get_constant_volume_specific_heat # alias
 
+    @overload
+    def get_ratio_of_specific_heats_sonic(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_ratio_of_specific_heats_sonic(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_ratio_of_specific_heats_sonic(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the ratio of specific heats for the given expansion ratio.
 
@@ -839,6 +900,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.ratio_of_specific_heats_sonic)
     get_gamma_s = get_ratio_of_specific_heats_sonic # alias
 
+    @overload
+    def get_sonic_velocity(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_sonic_velocity(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_sonic_velocity(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the sonic velocity for the given expansion ratio.
 
@@ -857,6 +922,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.sonic_velocity)
     get_c = get_sonic_velocity # alias
 
+    @overload
+    def get_gas_velocity(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_gas_velocity(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_gas_velocity(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the gas velocity for the given expansion ratio.
 
@@ -873,6 +942,11 @@ class CEAOutput:
         if ae_at is None:
             raise ValueError("ae_at must be provided to get the gas velocity.")
         return np.interp(ae_at, self.ae_at, self.gas_velocity)
+
+    @overload
+    def get_characteristic_velocity(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_characteristic_velocity(self, *, ae_at: FloatArray) -> FloatArray: ...
 
     def get_characteristic_velocity(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the characteristic velocity for the given expansion ratio.
@@ -892,6 +966,10 @@ class CEAOutput:
         return np.interp(ae_at, self.ae_at, self.characteristic_velocity)
     get_c_star = get_characteristic_velocity # alias
 
+    @overload
+    def get_coefficient_of_thrust(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_coefficient_of_thrust(self, *, ae_at: FloatArray) -> FloatArray: ...
     def get_coefficient_of_thrust(self, *, ae_at: FloatOrArray | None) -> FloatOrArray:
         """Interpolate the coefficient of thrust for the given expansion ratio.
 
