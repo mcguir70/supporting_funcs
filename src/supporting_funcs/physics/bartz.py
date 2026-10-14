@@ -1,13 +1,14 @@
 """Bartz equation parameters for heat transfer calculations."""
+from copy import deepcopy
 from types import SimpleNamespace
 from typing import overload
 
 import scipy.constants as csp
-from numpy import ndarray
+from numpy import array, empty, linspace, ndarray
 from scipy.optimize import curve_fit
 
 from supporting_funcs.coding.type_hints import FloatArray, FloatOrArray
-from supporting_funcs.physics.cea_wrapper import CEAOutput as new_CEAOutput
+from supporting_funcs.physics.cea_wrapper import CEAOutput, PropellentMixture
 
 G0 = csp.g  # [m/s^2] standard gravity
 G0_FT = G0 / csp.foot  # [ft/s^2] standard gravity
@@ -123,7 +124,7 @@ class BartzParamClass:
                                             sigma_c_exp_imp=self.sigma_c_exp,
                                             hg_term_imp=self.hg_term)
 
-def create_bartz_param_class(cea_result: new_CEAOutput,
+def create_bartz_param_class(cea_result: CEAOutput,
                              d_throat: float,
                              r_throat_curve: float,
                              mach: float | ndarray = 1.0,
@@ -479,3 +480,34 @@ def calc_mu_coeff(temp_array: FloatArray, viscosity_array: FloatArray) -> Simple
     mu_coeff = SimpleNamespace(a=curve[0], b=curve[1])
 
     return mu_coeff
+
+def calc_mu_coeff_from_cea(cea_obj: PropellentMixture, n_pts: int = 100) -> SimpleNamespace:
+    """Calculate the coefficients for the viscosity curve fit from CEA results.
+
+    Parameters
+    ----------
+    cea_obj: new_CEAOutput
+        An instance of new_CEAOutput containing the results from CEA analysis.
+    n_pts: int
+        Number of points to use for the curve fit.
+
+    Returns
+    -------
+    mu_coeff: SimpleNamespace
+        A SimpleNamespace containing the coefficients 'a' and 'b' for the viscosity curve fit.
+    """
+    cea_obj = deepcopy(cea_obj)
+    p_c = cea_obj.solution.chamber_pressure
+    temp_limits = array([cea_obj.solution.temperature[-1], cea_obj.solution.temperature[0]])
+
+    hot_enthalpy = cea_obj.cea_h_chamb
+    enthalpy_limits = array([hot_enthalpy * temp_limits[0] / temp_limits[1], hot_enthalpy])
+
+    mu_stag_arr = empty([n_pts])
+    temp_arr = empty([n_pts])
+    for idx, enthalpy in enumerate(linspace(enthalpy_limits[0], enthalpy_limits[1], n_pts)):
+        cea_obj.solve(p_c=p_c, h_chamb_kj_kg=enthalpy)
+        mu_stag_arr[idx] = cea_obj.solution.mu[0]
+        temp_arr[idx] = cea_obj.solution.temperature[0]
+
+    return calc_mu_coeff(temp_arr, mu_stag_arr)
