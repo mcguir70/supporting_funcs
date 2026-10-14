@@ -70,6 +70,7 @@ class BoundaryCondition:
         heat_flux: [W/m^2]
             The heat flux out of the wall.
         """
+
 # class ConstantTemperatureBoundaryCondition(BoundaryCondition):
 #     def __init__(self, temperature: float):
 #         super().__init__()
@@ -104,7 +105,7 @@ class ConstantHeatFluxBoundaryCondition(BoundaryCondition):
 class ConvectionBoundaryCondition(BoundaryCondition):
     """Boundary condition with convective heat transfer."""
 
-    def __init__(self, heat_transfer_coefficient: float, ambient_temperature: float):
+    def __init__(self, heat_transfer_coefficient: float, ambient_temperature: float, ):
         super().__init__()
         self.heat_transfer_coefficient = heat_transfer_coefficient
         self.ambient_temperature = ambient_temperature
@@ -142,11 +143,15 @@ class RadiationBoundaryCondition(BoundaryCondition):
 class BartzBoundaryCondition(BoundaryCondition):
     """Boundary condition using the Bartz correlation for heat transfer (rocket nozzles)."""
 
-    def __init__(self, cea_obj: PropellentMixture, d_throat: float, r_throat_curve: float):
+    def __init__(self, cea_obj: PropellentMixture,
+                 d_throat: float,
+                 r_throat_curve: float,
+                 heat_transfer_scalar: float = 1.0):
         super().__init__()
         self.cea_obj = cea_obj
         self.d_throat = d_throat
         self.r_throat_curve = r_throat_curve
+        self.heat_transfer_scalar = heat_transfer_scalar
         self.bartz_param_obj = create_bartz_param_class(cea_result=cea_obj.solution,
                                                     d_throat=d_throat,
                                                     r_throat_curve=r_throat_curve
@@ -161,7 +166,7 @@ class BartzBoundaryCondition(BoundaryCondition):
         h = self.compute_heat_transfer_coefficient(wall_temperature)
         if gas_temperature is None:
             gas_temperature = float(self.cea_obj.solution.temperature[1]) # Throat
-        return h * (wall_temperature - gas_temperature)
+        return (h * self.heat_transfer_scalar) * (wall_temperature - gas_temperature)
 class ThermalLayer:
     """Class representing a thermal layer in the model."""
 
