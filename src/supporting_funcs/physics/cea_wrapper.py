@@ -163,9 +163,6 @@ class PropellentMixture:
             self.o_f_ratio = self.o_f_moles_to_o_f_mass(o_f_ratio)
         else:
             self.o_f_ratio = o_f_ratio
-
-
-
         self._set_cea_solver()
 
     @property
@@ -264,6 +261,20 @@ class PropellentMixture:
         self._o_f_ratio = value
         if (self.cea_solver is not None) and (self.last_raw_solution is not None):
             self.resolve()
+
+    @property
+    def cea_h_chamb(self) -> float:
+        """Get the chamber enthalpy for the propellent mixture [kJ/kg]."""
+        return self.get_cea_reactants().calc_property(cea.ENTHALPY,
+                                                            self.cea_weights,
+                                                            np.append(self.oxidizer_temperatures,
+                                                                      self.fuel_temperatures)
+                ) / cea.R
+
+    @property
+    def cea_weights(self) -> FloatArray:
+        """Get the weights of the propellents in the mixture, organized for the CEA solver."""
+        return self.get_o_f_weights(o_f_ratio=self.o_f_ratio)
 
     @property
     def cea_solver(self) -> cea.RocketSolver:
@@ -371,7 +382,8 @@ class PropellentMixture:
               ae_at: FloatOrArray | None = None,
               is_choked: bool = True,
               subar: FloatOrArray | None = None,
-              supar: FloatOrArray | None = None
+              supar: FloatOrArray | None = None,
+              h_chamb_kj_kg: float | None = None
               ) -> CEAOutput:
         """Solve the CEA problem for the given propellent mixture.
 
@@ -391,6 +403,8 @@ class PropellentMixture:
         supar: [1], optional
             Supersonic expansion ratios (A_e / A_t) for the solution.
             If provided along with ae_at, the solution will be computed for all expansion ratios.
+        h_chamb_kj_kg: [kJ/kg], optional
+            Chamber enthalpy. If None, the chamber enthalpy will be computed.
         """
         solver = self.cea_solver
         solution = cea.RocketSolution(solver)
@@ -413,18 +427,13 @@ class PropellentMixture:
             old_val: FloatOrArray = kwargs.get('supar', [])
             kwargs['supar'] = np.append(old_val, supar)
 
-        weights = self.get_o_f_weights(o_f_ratio=self.o_f_ratio)
-
-        h_chamb = self.get_cea_reactants().calc_property(cea.ENTHALPY,
-                                                    weights,
-                                                    np.append(self.oxidizer_temperatures,
-                                                              self.fuel_temperatures)
-        ) / cea.R
+        if h_chamb_kj_kg is None:
+            h_chamb_kj_kg = self.cea_h_chamb
 
         solver.solve(soln=solution,
-                     weights=weights,
+                     weights=self.cea_weights,
                      pc=p_c / csp.bar, # Pa to bar
-                     hc = h_chamb,
+                     hc = h_chamb_kj_kg,
                      **kwargs
                      )
 
