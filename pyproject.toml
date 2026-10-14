@@ -54,7 +54,9 @@ exclude_lines = [
 line-length = 100
 src = ["src", "tests"]
 
-
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "N", "UP", "B"]
-ignore = ["N812", "UP040"]
+select = ["E", "W", "F", "I", "N", "UP", "B", "D", "FIX"]
+extend-select = ["PYI"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

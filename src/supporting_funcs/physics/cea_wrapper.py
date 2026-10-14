@@ -109,12 +109,17 @@ class Propellent:
             raise ValueError("percent_mass must be non-negative")
         self._percent_mass = percent_mass
 
+
 class PropellentMixture:
     """A mixture of propellents that can be used to run CEA calculations."""
 
     def __init__(self, oxidizers: list[Propellent],
                  fuels: list[Propellent],
                  o_f_ratio: float,
+                 *,
+                 o_f_ratio_is_moles: bool = False,
+                 include_ions: bool = False,
+                 calculate_transport_properties: bool = True
                  ) -> None:
         """Initialize a PropellentMixture instance.
 
@@ -126,8 +131,16 @@ class PropellentMixture:
             A list of fuel propellents.
         o_f_ratio: float
             The oxidizer-to-fuel ratio. If o_f_ratio is 0 or np.inf, the mixture is a monopropellant
+        o_f_ratio_is_moles: bool, default False
+            If True, the o_f_ratio is interpreted as a molar ratio. If False, it is a mass ratio.
+        include_ions: bool, default False
+            If True, include ions in the CEA calculations. If False, do not include ions.
         """
         self._last_soln: cea.RocketSolution | None = None
+
+        # Abnormal flags for the CEA solver
+        self.include_ions = include_ions
+        self.calculate_transport_properties = calculate_transport_properties
 
         if len(oxidizers) == 0 and len(fuels) == 0:
             raise ValueError("At least one oxidizer or fuel must be provided.")
@@ -146,7 +159,12 @@ class PropellentMixture:
         # Keep the validation in place
         self.fuels = fuels
         self.oxidizers = oxidizers
-        self.o_f_ratio = o_f_ratio
+        if o_f_ratio_is_moles:
+            self.o_f_ratio = self.o_f_moles_to_o_f_mass(o_f_ratio)
+        else:
+            self.o_f_ratio = o_f_ratio
+
+
 
         self._set_cea_solver()
 
@@ -268,7 +286,10 @@ class PropellentMixture:
     def _set_cea_solver(self) -> None:
         reac = self.get_cea_reactants()
         prod = self.get_cea_products()
-        self._cea_solver = cea.RocketSolver(reactants=reac, products=prod)
+        self._cea_solver = cea.RocketSolver(reactants=reac,
+                                            products=prod,
+                                            ions=self.include_ions,
+                                            transport=self.calculate_transport_properties)
 
     def get_species(self) -> list[cea.Reactant | str]:
         """Get the list of species in the propellent mixture as cea.Reactant instances / strings."""
@@ -276,14 +297,17 @@ class PropellentMixture:
 
     def get_cea_reactants(self) -> cea.Mixture:
         """Get the CEA reactants mixture for this propellent mixture."""
-        return cea.Mixture(species=self.get_species())
+        return cea.Mixture(species=self.get_species(),
+                           ions=self.include_ions)
 
     def get_cea_products(self) -> cea.Mixture:
         """Get the CEA products mixture for this propellent mixture."""
-        return cea.Mixture(species=self.get_species(), products_from_reactants=True)
+        return cea.Mixture(species=self.get_species(),
+                           products_from_reactants=True,
+                           ions=self.include_ions)
 
     def get_o_f_weights(self, o_f_ratio: float) -> FloatArray:
-        """Convert an oxidizer-to-fuel ratio to a weight distribution for the CEA solver."""
+        """Convert an oxidizer-to-fuel mass ratio to a weight distribution for the CEA solver."""
         if o_f_ratio < 0:
             raise ValueError("o_f_ratio must be non-negative")
         if o_f_ratio == 0:
@@ -291,23 +315,63 @@ class PropellentMixture:
         if o_f_ratio == np.inf:
             return self.oxidizer_weights
 
-        # Multi-prop:
-        oxidizer_weight_len = self.oxidizer_weights.shape[0]
-        fuel_weight_len = self.fuel_weights.shape[0]
-
         # append zeros
-        oxidizer_weights = np.append(self.oxidizer_weights, np.zeros(fuel_weight_len))
-        fuel_weights = np.append(np.zeros(oxidizer_weight_len), self.fuel_weights)
+        oxidizer_weights = np.append(self.oxidizer_weights, np.zeros_like(self.fuel_weights))
+        fuel_weights = np.append(np.zeros_like(self.oxidizer_weights), self.fuel_weights)
 
         return self.get_cea_reactants().of_ratio_to_weights(
             oxidant_weights=oxidizer_weights, fuel_weights=fuel_weights, of_ratio=o_f_ratio
         )
 
+    def o_f_moles_to_o_f_mass(self,
+                          o_f_ratio_moles: float) -> float:
+        """Convert an oxidizer-to-fuel ratio in moles to a mass basis.
+
+        Parameters
+        ----------
+        o_f_ratio_moles: float
+            The oxidizer-to-fuel ratio in moles.
+
+        Returns
+        -------
+        o_f_ratio_mass: float
+            The oxidizer-to-fuel ratio in mass.
+        """
+        if o_f_ratio_moles < 0:
+            raise ValueError("o_f_ratio_moles must be non-negative")
+        elif o_f_ratio_moles == 0:
+            return 0.0  # If there are no oxidizers, the mass ratio is zero
+        elif o_f_ratio_moles == np.inf:
+            return np.inf  # If there are no fuels, the mass ratio is infinite
+
+        if len(self.fuel_weights) != 1 or len(self.oxidizer_weights) != 1:
+            raise NotImplementedError("Conversion from oxidizer-to-fuel ratio in moles"
+                                      "to mass is only implemented for single oxidizer "
+                                      "and single fuel mixtures.")
+
+        ox_weights = np.concatenate((self.oxidizer_weights, np.zeros_like(self.fuel_weights)))
+        fuel_weights = np.concatenate((np.zeros_like(self.oxidizer_weights), self.fuel_weights))
+
+        mws = self.get_cea_reactants().moles_to_weights(np.ones_like(fuel_weights)) # g/mol
+
+        fuel_mw = np.sum(fuel_weights * mws)
+        ox_mw = np.sum(ox_weights * mws)
+
+        if fuel_mw == 0:
+            return np.inf  # If there are no fuels, the mass ratio is infinite
+        if ox_mw == 0:
+            return 0.0  # If there are no oxidizers, the mass ratio is zero
+
+        return o_f_ratio_moles * ox_mw / fuel_mw
+
+
     def solve(self, p_c: float,
               *,
               pi_p: FloatOrArray | None = None,
               ae_at: FloatOrArray | None = None,
-              is_choked: bool = True
+              is_choked: bool = True,
+              subar: FloatOrArray | None = None,
+              supar: FloatOrArray | None = None
               ) -> CEAOutput:
         """Solve the CEA problem for the given propellent mixture.
 
@@ -321,6 +385,12 @@ class PropellentMixture:
             Nozzle expansion ratio (A_e / A_t)
         is_choked: [bool], default True
             Whether the nozzle is choked or not. If False, the solution will be unchoked.
+        subar: [1], optional
+            Subsonic expansion ratios (A_e / A_t) for the solution.
+            If provided, the solution will be computed for these expansion ratios.
+        supar: [1], optional
+            Supersonic expansion ratios (A_e / A_t) for the solution.
+            If provided along with ae_at, the solution will be computed for all expansion ratios.
         """
         solver = self.cea_solver
         solution = cea.RocketSolution(solver)
@@ -333,7 +403,15 @@ class PropellentMixture:
                 key = 'supar'
             else:
                 key = 'subar'
-            kwargs[key] = ae_at
+            kwargs[key] = np.array([ae_at] if isinstance(ae_at, (list, np.ndarray)) else [ae_at])
+
+        if subar is not None:
+            old_val: FloatOrArray = kwargs.get('subar', [])
+            kwargs['subar'] = np.append(old_val, subar)
+
+        if supar is not None:
+            old_val: FloatOrArray = kwargs.get('supar', [])
+            kwargs['supar'] = np.append(old_val, supar)
 
         weights = self.get_o_f_weights(o_f_ratio=self.o_f_ratio)
 
@@ -411,6 +489,10 @@ class CEAOutput:
         self.raw_solution = solution
         self.o_f_ratio = o_f_ratio
 
+    def __str__(self) -> str:
+        """Return a string representation of the CEAOutput instance."""
+        return output_solution(self.raw_solution)
+
     @property
     def raw_solution(self) -> cea.RocketSolution:
         """Get the raw CEA solution."""
@@ -432,6 +514,11 @@ class CEAOutput:
         if value < 0:
             raise ValueError("o_f_ratio must be positive")
         self._o_f_ratio = value
+
+    @property
+    def is_frozen(self) -> bool:
+        """Get whether the solution is frozen or not."""
+        return all(self.raw_solution.cv == self.raw_solution.cv_fr)
 
     @property
     def ae_at(self) -> FloatArray:
@@ -544,6 +631,7 @@ class CEAOutput:
         """
         return self.raw_solution.gamma_s
     gamma_s = ratio_of_specific_heats_sonic
+    gamma = ratio_of_specific_heats_sonic # alias
 
     @property
     def characteristic_velocity(self) -> FloatArray:
@@ -567,6 +655,54 @@ class CEAOutput:
     def gas_velocity(self) -> FloatArray:
         """Get the gas velocity for the solution [m/s]."""
         return self.sonic_velocity * self.mach
+
+    @property
+    def viscosity(self) -> FloatArray:
+        """Get the viscosity for the solution [Pa*s]."""
+        return self.raw_solution.viscosity * csp.milli # Pa*s
+    mu = viscosity # alias
+
+    @property
+    def conductivity_fr(self) -> FloatArray:
+        """Get the conductivity for the solution [W/m/K]."""
+        return self.raw_solution.conductivity_fr
+    k_fr = conductivity_fr # alias
+
+    @property
+    def conductivity_eq(self) -> FloatArray:
+        """Get the conductivity for the solution [W/m/K]."""
+        return self.raw_solution.conductivity_eq
+    k_eq = conductivity_eq # alias
+
+    @property
+    def conductivity(self) -> FloatArray:
+        """Get the conductivity for the solution [W/m/K]."""
+        if self.is_frozen:
+            return self.conductivity_fr
+        else:
+            return self.conductivity_eq
+    k = conductivity # alias
+
+    @property
+    def prandtl_eq(self) -> FloatArray:
+        """Get the Prandtl number for the solution [1]."""
+        return self.raw_solution.Pr_eq
+    Pr_eq = prandtl_eq # alias
+
+    @property
+    def prandtl_fr(self) -> FloatArray:
+        """Get the Prandtl number for the solution [1]."""
+        return self.raw_solution.Pr_fr
+    Pr_fr = prandtl_fr # alias
+
+    @property
+    def prandtl(self) -> FloatArray:
+        """Get the Prandtl number for the solution [1]."""
+        if self.is_frozen:
+            return self.prandtl_fr
+        else:
+            return self.prandtl_eq
+    Pr = prandtl # alias
 
     @overload
     def get_isp_vacuum(self, *, ae_at: float | None) -> float: ...
@@ -987,6 +1123,71 @@ class CEAOutput:
             return self.coefficient_of_thrust[0]
         return np.interp(ae_at, self.ae_at, self.coefficient_of_thrust)
     get_c_f = get_coefficient_of_thrust # alias
+
+    @overload
+    def get_viscosity(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_viscosity(self, *, ae_at: FloatArray) -> FloatArray: ...
+    def get_viscosity(self, *, ae_at: FloatOrArray | None = None) -> FloatOrArray:
+        """Interpolate the viscosity for the given expansion ratio.
+
+        Parameters
+        ----------
+        ae_at: [1]
+            Nozzle expansion ratio (A_e / A_t), if None, return the chamber value
+
+        Returns
+        -------
+        mu: [Pa*s]
+            Viscosity for the given expansion ratio
+        """
+        if ae_at is None:
+            return self.viscosity[0]
+        return np.interp(ae_at, self.ae_at, self.viscosity)
+    get_mu = get_viscosity # alias
+
+    @overload
+    def get_conductivity(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_conductivity(self, *, ae_at: FloatArray) -> FloatArray: ...
+    def get_conductivity(self, *, ae_at: FloatOrArray | None = None) -> FloatOrArray:
+        """Interpolate the conductivity for the given expansion ratio.
+
+        Parameters
+        ----------
+        ae_at: [1]
+            Nozzle expansion ratio (A_e / A_t), if None, return the chamber value
+
+        Returns
+        -------
+        k: [W/m/K]
+            Conductivity for the given expansion ratio
+        """
+        if ae_at is None:
+            return self.conductivity[0]
+        return np.interp(ae_at, self.ae_at, self.conductivity)
+    get_k = get_conductivity # alias
+
+    @overload
+    def get_prandtl(self, *, ae_at: float | None) -> float: ...
+    @overload
+    def get_prandtl(self, *, ae_at: FloatArray) -> FloatArray: ...
+    def get_prandtl(self, *, ae_at: FloatOrArray | None = None) -> FloatOrArray:
+        """Interpolate the Prandtl number for the given expansion ratio.
+
+        Parameters
+        ----------
+        ae_at: [1]
+            Nozzle expansion ratio (A_e / A_t), if None, return the chamber value
+
+        Returns
+        -------
+        pr: [1]
+            Prandtl number for the given expansion ratio
+        """
+        if ae_at is None:
+            return self.prandtl[0]
+        return np.interp(ae_at, self.ae_at, self.prandtl)
 
 def output_solution(solution: cea.RocketSolution) -> str:
     """Format the CEA solution into a human-readable string."""

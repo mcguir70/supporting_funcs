@@ -1,6 +1,12 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.0.7
+### 2026-10-14
+Updated bartz.py to utilize cea_wrapper.py (instead of the old CEA2 wrapper). 
+Updated cea_wrapper.py to allow calculation of transport properties (enabled by default) and added some mole ratio capabilities.
+Added some support to test_cea_wrapper for new functions (not full coverage yet).
+
 ## 0.0.6
 ### 2026-10-12
 Removed the cea_wrapper.pyi file. All of the overload type hints have been added directly to the cea_wrapper.py file, so the pyi file is no longer necessary (.pyi was missing some .py functions so this way there is no longer a mismatch).

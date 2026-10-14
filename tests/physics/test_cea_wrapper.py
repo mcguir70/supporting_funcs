@@ -44,13 +44,16 @@ def _error_search(regex_pattern: str, line: str, inst: int = 0) -> str:
 class TestCEAComputations:
     """Test the calculations of the CEA wrapper against the CEA website output."""
 
-    input_path = r"tests/physics/inputs/mon_mmh_p150.txt"
-    good_val = ""
+    input_path      = r"tests/physics/inputs/mon_mmh_p150.txt"
+    rp_1311_11_path = r"tests/physics/inputs/rp_1131_11.txt"
 
     with open(input_path) as f:
         good_val = f.read()
+    with open(rp_1311_11_path) as f:
+        rp_1311_11_val = f.read()
 
     good_lines = good_val.splitlines()
+    rp_1311_11_lines = rp_1311_11_val.splitlines()
 
     p_c = float(_error_search(r"p,psia= (\d+)", good_lines[19], 1)) * csp.psi  # Convert psia to Pa
     pi_p = float(_error_search(r"pi/p= (\d+\.?\d*)", good_lines[21], 1))
@@ -294,6 +297,304 @@ class TestCEAComputations:
             raise AssertionError(f"Failed: {len(failed_keys)}\n"
                                  + "\n".join([f"- Key: {key}, Expected: {expected}, Got: {actual}"
                                               for key, expected, actual in failed_keys]))
+    # def test_rp_1311_11(self):
+    #     """Test the RP-1311-11 propellent mixture."""
+    #     fuels = [Propellent(name="Li(cr)", percent_mass=1.0, temperature=298.15)]
+    #     oxidizers = [Propellent(name="F2(L)", percent_mass=1.0, temperature=85.02)]
+
+    #     o_f_moles = 0.5556
+
+    #     pc = Q_(1000.0, "psi").to("Pa").magnitude
+    #     pi_p = 68.0457
+    #     subar = np.array([10.0])
+    #     supar = np.array([10.0, 20.0, 100.0])
+
+    #     mixture = PropellentMixture(oxidizers=oxidizers,
+    #                                 fuels=fuels,
+    #                                 o_f_ratio=o_f_moles,
+    #                                 o_f_ratio_is_moles=True,
+    #                                 include_ions=True)
+    #     mixture.solve(p_c=pc,
+    #                     pi_p=pi_p,
+    #                     subar=subar,
+    #                     supar=supar)
+
+    #     # soln_str: str = ""
+    #     # solution = mixture.solution.raw_solution
+
+    #     # num_pts = solution.num_pts
+    #     # T = solution.T
+    #     # P = solution.P
+    #     # rho = solution.density
+    #     # enthalpy = solution.enthalpy
+    #     # energy = solution.energy
+    #     # gibbs = solution.gibbs_energy
+    #     # entropy = solution.entropy
+    #     # n = solution.n
+    #     # M_1n = solution.M
+    #     # MW = solution.MW
+    #     # cp_eq = solution.cp_eq
+    #     # cp_fr = solution.cp_fr
+    #     # cv_eq = solution.cv_eq
+    #     # cv_fr = solution.cv_fr
+    #     # visc = solution.viscosity
+    #     # cond_fr = solution.conductivity_fr
+    #     # cond_eq = solution.conductivity_eq
+    #     # prandtl_fr = solution.Pr_fr
+    #     # prandtl_eq = solution.Pr_eq
+    #     # Mach = solution.Mach
+    #     # gamma_s = solution.gamma_s
+    #     # v_sonic = solution.sonic_velocity
+    #     # ae_at = solution.ae_at
+    #     # c_star = solution.c_star
+    #     # Cf = solution.coefficient_of_thrust
+    #     # Isp = solution.Isp
+    #     # Isp_vac = solution.Isp_vacuum
+
+    #     # print("P, bar         ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(P[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(P[i]))
+
+    #     # print("T, K           ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(T[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(T[i]))
+
+    #     # print("Density, kg/m^3", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(rho[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(rho[i]))
+
+    #     # print("H, kJ/kg       ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.2f}".format(enthalpy[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.2f}".format(enthalpy[i]))
+
+    #     # print("U, kJ/kg       ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.2f}".format(energy[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.2f}".format(energy[i]))
+
+    #     # print("G, kJ/kg       ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.1f}".format(gibbs[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.1f}".format(gibbs[i]))
+
+    #     # print("S, kJ/kg-K     ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(entropy[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(entropy[i]))
+
+    #     # print("M, (1/n)       ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(M_1n[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(M_1n[i]))
+
+    #     # print("MW             ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(MW[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(MW[i]))
+
+    #     # print("Cp, kJ/kg-K    ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(cp_eq[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(cp_eq[i]))
+
+    #     # print("Gamma_s        ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(gamma_s[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(gamma_s[i]))
+
+    #     # print("Son. vel., m/s ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.2f}".format(v_sonic[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.2f}".format(v_sonic[i]))
+
+    #     # print("Mach           ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(Mach[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(Mach[i]))
+
+    #     # print("")
+    #     # print("TRANSPORT PROPERTIES")
+    #     # print("")
+
+    #     # print("Viscosity, mP   ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(visc[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(visc[i]))
+
+    #     # print("")
+    #     # print("with equilibrium reaction:")
+    #     # print("")
+
+    #     # print("Cp, cal/g-K     ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cp_eq[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cp_eq[i]))
+
+    #     # print("Cv, cal/g-K     ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cv_eq[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cv_eq[i]))
+
+    #     # print("Conductivity    ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cond_eq[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cond_eq[i]))
+
+    #     # print("Prandtl number  ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(prandtl_eq[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(prandtl_eq[i]))
+
+    #     # print("")
+    #     # print("with frozen reaction:")
+    #     # print("")
+
+    #     # print("Cp, cal/g-K     ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cp_fr[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cp_fr[i]))
+
+    #     # print("Cv, cal/g-K     ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cv_fr[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cv_fr[i]))
+
+    #     # print("Conductivity    ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(cond_fr[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(cond_fr[i]))
+
+    #     # print("Prandtl number  ", end="")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.4f}".format(prandtl_fr[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.4f}".format(prandtl_fr[i]))
+
+    #     # print("")
+    #     # print("PERFORMANCE PARAMETERS")
+    #     # print("")
+
+    #     # print("Ae/At          ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(ae_at[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(ae_at[i]))
+
+    #     # print("C*, m/s        ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.2f}".format(c_star[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.2f}".format(c_star[i]))
+
+    #     # print("Cf             ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(Cf[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(Cf[i]))
+
+    #     # print("Isp, vac., m/s ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(Isp_vac[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(Isp_vac[i]))
+
+    #     # print("Isp, m/s       ", end=" ")
+    #     # for i in range(num_pts):
+    #     #     if i < num_pts-1:
+    #     #         print("{0:10.3f}".format(Isp[i]), end=" ")
+    #     #     else:
+    #     #         print("{0:10.3f}".format(Isp[i]))
+
+    #     # print()
+    #     # print("MOLE FRACTIONS")
+    #     # print("")
+    #     # trace_species = []
+    #     # for prod in solution.mole_fractions:
+    #     #     if np.any(solution.mole_fractions[prod] > 5e-6):
+    #     #         print("{0:15s}".format(prod), end=" ")
+    #     #         for j in range(len(solution.mole_fractions[prod])):
+    #     #             if j < len(solution.mole_fractions[prod])-1:
+    #     #                 print("{0:10.5g}".format(solution.mole_fractions[prod][j]), end=" ")
+    #     #             else:
+    #     #                 print("{0:10.5g}".format(solution.mole_fractions[prod][j]))
+    #     #     else:
+    #     #         trace_species.append(prod)
+
+    #     # print()
+    #     # print("TRACE SPECIES:")
+    #     # max_cols = 8
+    #     # nrows = (len(trace_species) + max_cols - 1) // max_cols
+    #     # for i in range(nrows):
+    #     #     print(" ".join("{0:15s}".format(trace_species[j]) for j in range(i * max_cols, min((i + 1) * max_cols, len(trace_species)))))
+
+
+    #     incorrect_lines = []
+    #     for idx_line, (line_calc, line_ref) in enumerate(zip(soln_str.splitlines(), self.rp_1311_11_val.splitlines())):
+    #         if line_calc.strip() != line_ref.strip():
+    #             incorrect_lines.append((idx_line, line_calc, line_ref))
+    #     if incorrect_lines:
+    #         error_msg = f"CEA wrapper output does not match the RP-1311-11 propellent mixture output.\n"
+    #         error_msg += f"Number of incorrect lines: {len(incorrect_lines)}\n"
+    #         for idx_line, line_calc, line_ref in incorrect_lines:
+    #             error_msg += f"Line {idx_line}:\n"
+    #             error_msg += f"  Calculated: {line_calc}\n"
+    #             error_msg += f"  Reference:  {line_ref}\n"
+    #         raise AssertionError(error_msg)
+
+    #     assert soln_str == self.rp_1311_11_val, "CEA wrapper output does not match the RP-1311-11 propellent mixture output."
+
+    #     raise NotImplementedError("Test for RP-1311-11 propellent mixture is not fully implemented yet.")
 
 class TestCEAOutput:
     """Test the implementation of the CEA wrapper for consistency."""
@@ -423,3 +724,8 @@ class TestPropellent:
 
         mixture_fu.solve(p_c=Q_(500, "psi").to("Pa").magnitude, ae_at=50.0)
         mixture_ox.solve(p_c=Q_(500, "psi").to("Pa").magnitude, ae_at=50.0)
+
+        for arg in ["temperature", "pressure", "conductivity", "cp", "cv", "Pr", "viscosity", "density", "enthalpy", "internal_energy", "gibbs_energy", "entropy"]:
+            fu_value = getattr(mixture_fu.solution, arg)
+            ox_value = getattr(mixture_ox.solution, arg)
+            np.testing.assert_allclose(fu_value, ox_value, rtol=1e-3, err_msg=f"Monopropellant test failed for {arg}.")

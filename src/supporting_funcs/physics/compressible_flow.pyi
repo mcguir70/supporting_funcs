@@ -15,7 +15,7 @@ from supporting_funcs.coding.type_hints import (
                                                 OneDFloatArray,
 )
 
-MachLims: TypeAlias = FloatArray | tuple[float, float]
+type MachLims = FloatArray | tuple[float, float]
 
 #region Isentropic Flow Relations
 @overload
