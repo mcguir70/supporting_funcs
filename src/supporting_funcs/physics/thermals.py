@@ -1,4 +1,6 @@
+from abc import ABC, abstractmethod
 from enum import Enum, auto
+from typing import override
 
 import numpy as np
 from scipy.constants import Stefan_Boltzmann as sigma
@@ -44,13 +46,30 @@ class BoundaryCondition:
         pass
 
     @property
-    def infinite_temperature(self):
-        """Return the temperature at which the heat flux would be zero."""
-        raise NotImplementedError("This property should be implemented in subclasses.")
+    @abstractmethod
+    def infinite_temperature(self) -> float:
+        """Return the temperature at which the heat flux would be zero.
 
-    def compute_heat_flux(self, wall_temperature: float):
-        """Compute the heat flux out of the wall."""
-        raise NotImplementedError("This method should be implemented in subclasses.")
+        Returns
+        -------
+        infinite_temperature: [K]
+            The temperature at which the heat flux would be zero.
+        """
+
+    @abstractmethod
+    def compute_heat_flux(self, wall_temperature: float) -> float:
+        """Compute the heat flux out of the wall.
+
+        Parameters
+        ----------
+        wall_temperature: [K]
+            The temperature of the wall.
+
+        Returns
+        -------
+        heat_flux: [W/m^2]
+            The heat flux out of the wall.
+        """
 # class ConstantTemperatureBoundaryCondition(BoundaryCondition):
 #     def __init__(self, temperature: float):
 #         super().__init__()
@@ -72,10 +91,12 @@ class ConstantHeatFluxBoundaryCondition(BoundaryCondition):
         self.heat_flux = heat_flux
 
     @property
-    def infinite_temperature(self):
+    @override
+    def infinite_temperature(self) -> float:
         """Doesn't have a physical meaning for constant heat flux."""
         return float('inf')  # Represents an infinite temperature for heat flux boundary condition
 
+    @override
     def compute_heat_flux(self, wall_temperature: float):
         """Compute the heat flux out of the wall."""
         return self.heat_flux
@@ -89,10 +110,12 @@ class ConvectionBoundaryCondition(BoundaryCondition):
         self.ambient_temperature = ambient_temperature
 
     @property
-    def infinite_temperature(self):
+    @override
+    def infinite_temperature(self) -> float:
         """Return the ambient temperature for convective boundary condition."""
         return self.ambient_temperature
 
+    @override
     def compute_heat_flux(self, wall_temperature: float):
         """Compute the heat flux out of the wall."""
         return self.heat_transfer_coefficient * (wall_temperature - self.ambient_temperature)
@@ -106,11 +129,13 @@ class RadiationBoundaryCondition(BoundaryCondition):
         self.ambient_temperature = ambient_temperature
 
     @property
-    def infinite_temperature(self):
+    @override
+    def infinite_temperature(self) -> float:
         """Return the temperature at which the heat flux would be zero."""
         return self.ambient_temperature
 
-    def compute_heat_flux(self, wall_temperature: float):
+    @override
+    def compute_heat_flux(self, wall_temperature: float) -> float:
         """Compute the heat flux out of the wall."""
         return self.emissivity * sigma * (wall_temperature**4 - self.ambient_temperature**4)
 
@@ -127,10 +152,16 @@ class BartzBoundaryCondition(BoundaryCondition):
                                                     r_throat_curve=r_throat_curve
                                                     )
 
-    def compute_heat_transfer_coefficient(self, wall_temperature: float):
+    def compute_heat_transfer_coefficient(self, wall_temperature: float) -> float:
         """Compute the heat transfer coefficient using the Bartz correlation."""
         return self.bartz_param_obj.bartz_with_temp_variables(temp_wall=wall_temperature)
 
+    def compute_heat_flux(self, wall_temperature: float, *, gas_temperature: float | None = None) -> float:
+        """Compute the heat flux out of the wall using the Bartz correlation."""
+        h = self.compute_heat_transfer_coefficient(wall_temperature)
+        if gas_temperature is None:
+            gas_temperature = float(self.cea_obj.solution.temperature[1]) # Throat
+        return h * (wall_temperature - gas_temperature)
 class ThermalLayer:
     """Class representing a thermal layer in the model."""
 
