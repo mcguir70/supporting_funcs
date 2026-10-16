@@ -1,4 +1,26 @@
-from abc import ABC, abstractmethod
+"""
+Thermal analysis tools for modeling heat transfer.
+
+Classes
+-------
+Material
+    A class representing a material with thermal properties.
+BoundaryCondition
+    A base class for boundary conditions.
+ConstantHeatFluxBoundaryCondition
+    A boundary condition with a constant heat flux.
+ConvectionBoundaryCondition
+    A boundary condition with convective heat transfer.
+RadiationBoundaryCondition
+    A boundary condition with radiative heat transfer.
+BartzBoundaryCondition
+    A boundary condition using the Bartz correlation for heat transfer (rocket nozzles).
+
+Functions
+---------
+None
+"""
+from abc import abstractmethod
 from enum import Enum, auto
 from typing import override
 
@@ -161,7 +183,10 @@ class BartzBoundaryCondition(BoundaryCondition):
         """Compute the heat transfer coefficient using the Bartz correlation."""
         return self.bartz_param_obj.bartz_with_temp_variables(temp_wall=wall_temperature)
 
-    def compute_heat_flux(self, wall_temperature: float, *, gas_temperature: float | None = None) -> float:
+    def compute_heat_flux(self,
+                          wall_temperature: float,
+                          *,
+                          gas_temperature: float | None = None) -> float:
         """Compute the heat flux out of the wall using the Bartz correlation."""
         h = self.compute_heat_transfer_coefficient(wall_temperature)
         if gas_temperature is None:
@@ -280,12 +305,12 @@ class ThermalModel:
 
         total_resistance = sum(resistors)
 
-        def _err_func(temp_inner):
+        def _err_func(temp_inner_wall):
             """Compute the difference in heat flux between the inner and outer boundaries."""
-            heat_inner = area_inner *inner_boundary_condition.compute_heat_flux(temp_inner)
-            temp_outer = temp_inner - heat_inner * total_resistance
+            heat_inner = area_inner * inner_boundary_condition.compute_heat_flux(temp_inner_wall)
+            temp_outer = temp_inner_wall - heat_inner * total_resistance
             heat_outer = area_outer * outer_boundary_condition.compute_heat_flux(temp_outer)
-            return (heat_inner - heat_outer)
+            return (heat_inner + heat_outer)
 
         soln = root_scalar(_err_func, bracket=temp_limits, method='brentq')
         if not soln.converged:

@@ -1,6 +1,12 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.0.9
+Connor McGuire
+### 2026-10-15
+Updated formatting on a number of files
+Changed Ae_At to area_ratio in compressible_flow.py for consistency with other functions
+
 ## 0.0.8
 Connor McGuire
 ### 2026-10-14

@@ -1,21 +1,31 @@
-"""# matplotlib_tools.
+"""
 A set of tools for formatting and saving matplotlib figures.
 
 Functions
 ---------
-- save_active_fig: Saves the currently active figure to the specified filepath.
-- get_color_list: Returns a predefined list of color hex codes for plotting.
-- get_line_list: Returns a predefined list of line styles for plotting.
-- get_color: Returns a color hex code from the predefined list based on the given index.
-- get_line_style: Returns a line style based on the given index.
-- unique_format: Returns a unique combination of color and line style based on the given index.
-- format_plot: Formats the given matplotlib figure and axes for better visualization.
-- plot_circle: Plots a circle on the given axes.
-- plot_debug: Plots a simple debug plot of y vs x.
+save_active_fig:
+    - Saves the currently active figure to the specified filepath.
+get_color_list:
+    - Returns a predefined list of color hex codes for plotting.
+get_line_list:
+    - Returns a predefined list of line styles for plotting.
+get_color:
+    - Returns a color hex code from the predefined list based on the given index.
+get_line_style:
+    - Returns a line style based on the given index.
+unique_format:
+    - Returns a unique combination of color and line style based on the given index.
+format_plot:
+    - Formats the given matplotlib figure and axes for better visualization.
+plot_circle:
+    - Plots a circle on the given axes.
+plot_debug:
+    - Plots a simple debug plot of y vs x.
 
 Classes
 -------
-- PlotSaveClass: Class to manage saving matplotlib figures with optional customization.
+PlotSaveClass
+    - Class to manage saving matplotlib figures with optional customization.
 """
 from os import mkdir
 from os.path import exists
@@ -35,6 +45,7 @@ from supporting_funcs.coding.type_hints import AxesArr, AxesOrArray, MatPlotLibF
 
 class PlotSaveClass:
     """Class to manage saving matplotlib figures with optional customization."""
+
     def __init__(self, fig: Figure, ax: AxesOrArray, file_name: str | None = None) -> None:
         self.fig = fig
         self.ax = ax
@@ -55,7 +66,7 @@ class PlotSaveClass:
              transparent: bool = False,
              close_fig: bool = True,
              overwrite: bool = False) -> None:
-        """Saves the figure to the specified output folder.
+        """Save the figure to the specified output folder.
 
         Parameters
         ----------
@@ -104,20 +115,29 @@ class PlotSaveClass:
                 print(f"Error occurred while trying to clear the figure: {e}")
 
 def save_active_fig(fig: Figure, filepath: str, transparent: bool = False) -> None:
-    """Saves the currently active figure to the specified filepath.
+    """Save the currently active figure to the specified filepath.
 
-    Args:
-        fig (matplotlib.figure.Figure): The figure to save.
-        filepath (str): The path where the figure will be saved.
+    Parameters
+    ----------
+    fig: (matplotlib.figure.Figure)
+        The figure to save.
+    filepath: (str)
+        The path where the figure will be saved.
     """
     fig.savefig(filepath, bbox_inches='tight', transparent=transparent)
 
 def get_color_list(skiplist: None | list[int] = None) -> list[str]:
-    """Returns a predefined list of color hex codes for plotting.
-    Args:
-        skiplist (None | list[int]): List of indices to skip from the default color list.
-    Returns:
-        list[str]: A list of color hex codes.
+    """Return a predefined list of color hex codes for plotting.
+
+    Parameters
+    ----------
+    skiplist: (None | list[int])
+        List of indices to skip from the default color list.
+
+    Returns
+    -------
+    color_list: list[str]
+        A list of color hex codes.
     """
     defualt_list = ['#0000FF',
                     '#FF0000',
@@ -135,7 +155,7 @@ def get_color_list(skiplist: None | list[int] = None) -> list[str]:
         return [color for i, color in enumerate(defualt_list) if i not in skiplist]
 
 def get_line_list() -> list[tuple[float, tuple[int, ...]]]:
-    """Returns a predefined list of line styles for plotting.
+    """Return a predefined list of line styles for plotting.
 
     Returns
     -------
@@ -163,35 +183,50 @@ def get_line_list() -> list[tuple[float, tuple[int, ...]]]:
     return linestyle_tuple
 
 def get_color(index: int, skiplist: None | list[int] = None) -> str:
-    """Returns a color hex code from the predefined list based on the given index.
+    """Return a color hex code from the predefined list based on the given index.
 
-    Args:
-        index (int): The index of the desired color.
-        skiplist (None | list[int]): List of indices to skip from the default color list.
-    Returns:
+    Parameters
+    ----------
+    index: (int)
+        The index of the desired color.
+    skiplist: (None | list[int])
+        List of indices to skip from the default color list.
+
+    Returns
+    -------
+    color_hex
         str: The color hex code.
     """
     color_list = get_color_list(skiplist=skiplist)
     return color_list[index % len(color_list)]
 
 def get_line_style(index: int) -> tuple[float, tuple[int, ...]]:
-    """Returns a line style based on the given index.
+    """Return a line style based on the given index.
 
-    Args:
-        index (int): The index of the desired line style.
-    Returns:
-        tuple[float, tuple[int, ...]]: The line style.
+    Parameters
+    ----------
+    index: (int)
+        The index of the desired line style.
+
+    Returns
+    -------
+    line_style: tuple[float, tuple[int, ...]]
+        The line style.
     """
-
     linestyle_tuple = get_line_list()
     return linestyle_tuple[index % len(linestyle_tuple)]
 
-def unique_format(index: int) -> dict:
-    """Returns a unique combination of color and line style based on the given index.
+def unique_format(index: int) -> dict[str, str | tuple[float, tuple[int, ...]]]:
+    """Return a unique combination of color and line style based on the given index.
 
-    Args:
-        index (int): Thse index for which to get the unique format.
-    Returns:
+    Parameters
+    ----------
+    index: (int)
+        The index for which to get the unique format.
+
+    Returns
+    -------
+    format_kwargs: dict
         dict: A dictionary containing 'color' and 'linestyle'.
     """
     n_color = len(get_color_list())
@@ -222,19 +257,20 @@ def format_plot(fig: Figure,
                 aspect_ratio: float | None = None,
                 dims: tuple[float, float] | str = "default"
                 ) -> MatPlotLibFigAxes:
-    """Formats the given matplotlib figure and axes for better visualization.
+    """Format the given matplotlib figure and axes for better visualization.
 
     Parameters
     ----------
-        fig: [Figure]
-            The figure to format.
-        ax: [Axes | ndarray[Axes]]
-            The axes to format.
-        aspect_ratio: [1]
-            The aspect ratio for the figure, defined as height/width. Defaults to 9/16
+    fig: [Figure]
+        The figure to format.
+    ax: [Axes | ndarray[Axes]]
+        The axes to format.
+    aspect_ratio: [1]
+        The aspect ratio for the figure, defined as height/width. Defaults to 9/16
 
-
-    Returns:
+    Returns
+    -------
+    fig, ax: [Figure, Axes | ndarray[Axes]]
         tuple: A tuple containing the formatted figure and axes.
     """
     default_dpi = 300
@@ -319,13 +355,19 @@ def plot_circle(ax: Axes,
                 radius: float,
                 theta: ndarray | tuple[float, float] = (0, 2*PI),
                 **kwargs) -> None:
-    """Plots a circle on the given axes.
+    """Plot a circle on the given axes.
 
-    Args:
-        ax (matplotlib.axes.Axes): The axes on which to plot the circle.
-        center (tuple[float, float]): The (x, y) coordinates of the circle's center.
-        radius (float): The radius of the circle.
-        **kwargs: Additional keyword arguments to pass to the plot function.
+    Parameters
+    ----------
+    ax: (matplotlib.axes.Axes)
+        The axes on which to plot the circle.
+    center: (tuple[float, float])
+        The (x, y) coordinates of the circle's center.
+    radius: (float)
+        The radius of the circle.
+    theta: (ndarray | tuple[float, float])
+        The angular range for the circle. Defaults to (0, 2*pi).
+    **kwargs: Additional keyword arguments to pass to the plot function.
     """
     theta = linspace(theta[0], theta[1], 100)
     x = center[0] + radius * np_cos(theta)
@@ -339,7 +381,7 @@ def plot_debug(x: float | ndarray,
                x_label: str = "x",
                y_label: str = "y",
                title: str = "Debug Plot") -> None | tuple[Figure, Axes]:
-    """Plots a simple debug plot of y vs x.
+    """Plot a simple debug plot of y vs x.
 
     Parameters
     ----------

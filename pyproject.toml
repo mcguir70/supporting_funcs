@@ -57,6 +57,7 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "UP", "B", "D", "FIX"]
 extend-select = ["PYI"]
+ignore = ["N812"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

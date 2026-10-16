@@ -1,9 +1,11 @@
-"""# atmosphere.py
+"""
 Simulation of atmospheric properties.
 
-## Functions and Classes
-`AirProperties`: (Class)
+## Classes
+`AirProperties`
     class uses USSA1976 to compute standard atmospheric properties.
+
+## Functions
 `get_cp_air_properties`: (function)
     uses CoolProp to compute real-gas properties
     at a given pressure and temperature.
@@ -24,7 +26,8 @@ from supporting_funcs.coding.type_hints import FloatArray, FloatOrArray, OneDFlo
 
 
 class AirPropertiesIndex(IntEnum):
-    """Enum for indexing air properties in an array"""
+    """Enum for indexing air properties in an array."""
+
     ALTITUDE = 0
     Z = 0
     DENSITY = 1
@@ -43,13 +46,14 @@ class AirPropertiesIndex(IntEnum):
     C_S = 8
 
 class AirProperties:
-    """Class for atmospheric properties using USSA1976"""
+    """Class for atmospheric properties using USSA1976."""
+
     def __init__(self):
         self.atmosphere = ussa1976_compute()
 
     @property
     def atmosphere(self):
-        """Get the atmosphere data
+        """Get the atmosphere data.
 
         Returns
         -------
@@ -86,17 +90,17 @@ class AirProperties:
     def get_properties(self, altitude: FloatOrArray,
                        property_index: AirPropertiesIndex | None = None
                        ) -> dict[str, float] | dict[str, FloatArray] | FloatOrArray:
-        """Get atmospheric properties at a given altitude using USSA1976
+        """Get atmospheric properties at a given altitude using USSA1976.
 
-            Parameters
-            ----------
-            altitude: [m]
-                altitude
+        Parameters
+        ----------
+        altitude: [m]
+            altitude
 
-            Returns
-            -------
-            properties: [SI units]
-                dictionary with keys 't', 'p', 'rho', 'cs', 'mu'
+        Returns
+        -------
+        properties: [SI units]
+            dictionary with keys 't', 'p', 'rho', 'cs', 'mu'
         """
         if property_index is not None:
             if property_index == AirPropertiesIndex.ALTITUDE:
@@ -124,7 +128,7 @@ class AirProperties:
     @overload
     def get_density(self, altitude: FloatArray) -> FloatArray: ...
     def get_density(self, altitude: FloatOrArray) -> FloatOrArray:
-        """Get air density at a given altitude using USSA1976
+        """Get air density at a given altitude using USSA1976.
 
         Parameters
         ----------
@@ -143,7 +147,7 @@ class AirProperties:
     @overload
     def get_dynamic_viscosity(self, altitude: FloatArray) -> FloatArray: ...
     def get_dynamic_viscosity(self, altitude: FloatOrArray) -> FloatOrArray:
-        """Get air dynamic viscosity at a given altitude using USSA1976
+        """Get air dynamic viscosity at a given altitude using USSA1976.
 
         Parameters
         ----------
@@ -180,17 +184,17 @@ class AirProperties:
     @overload
     def get_temperature(self, altitude: FloatArray) -> FloatArray: ...
     def get_temperature(self, altitude: FloatOrArray) -> FloatOrArray:
-        """Get air temperature at a given altitude using USSA1976
+        """Get air temperature at a given altitude using USSA1976.
 
-            Parameters
-            ----------
-            altitude: [m]
-                altitude
+        Parameters
+        ----------
+        altitude: [m]
+            altitude
 
-            Returns
-            -------
-            temp: [K]
-                temperature
+        Returns
+        -------
+        temp: [K]
+            temperature
         """
         return np.interp(altitude, self._altitudes, self._t)
     get_T = get_temperature #noqa: N815
@@ -200,17 +204,17 @@ class AirProperties:
     @overload
     def get_pressure(self, altitude: FloatArray) -> FloatArray: ...
     def get_pressure(self, altitude: FloatOrArray) -> FloatOrArray:
-        """Get air pressure at a given altitude using USSA1976
+        """Get air pressure at a given altitude using USSA1976.
 
-            Parameters
-            ----------
-            altitude: [m]
-                altitude
+        Parameters
+        ----------
+        altitude: [m]
+            altitude
 
-            Returns
-            -------
-            p: [Pa]
-                pressure
+        Returns
+        -------
+        p: [Pa]
+            pressure
         """
         return np.interp(altitude, self._altitudes, self._p)
     get_P = get_pressure #noqa: N815
@@ -220,17 +224,17 @@ class AirProperties:
     @overload
     def get_speed_of_sound(self, altitude: FloatArray) -> FloatArray: ...
     def get_speed_of_sound(self, altitude: FloatOrArray) -> FloatOrArray:
-        """Get speed of sound at a given altitude using USSA1976
+        """Get speed of sound at a given altitude using USSA1976.
 
-            Parameters
-            ----------
-            altitude: [m]
-                altitude
+        Parameters
+        ----------
+        altitude: [m]
+            altitude
 
-            Returns
-            -------
-            cs: [m/s]
-                speed of sound
+        Returns
+        -------
+        cs: [m/s]
+            speed of sound
         """
         return np.interp(altitude, self._altitudes, self._son)
     get_cs = get_speed_of_sound
@@ -240,17 +244,17 @@ class AirProperties:
     @overload
     def get_altitude_equivalent(self, pressure: FloatArray) -> FloatArray: ...
     def get_altitude_equivalent(self, pressure: FloatOrArray) -> FloatOrArray:
-        """Get the altitude equivalent of a given pressure using USSA1976
+        """Get the altitude equivalent of a given pressure using USSA1976.
 
-            Parameters
-            ----------
-            pressure: [Pa]
-                pressure
+        Parameters
+        ----------
+        pressure: [Pa]
+            pressure
 
-            Returns
-            -------
-            altitude: [m]
-                altitude equivalent of the given pressure
+        Returns
+        -------
+        altitude: [m]
+            altitude equivalent of the given pressure
         """
         # Use numpy's interp function to find the altitude corresponding to the given pressure
         altitude = np.interp(pressure,
@@ -264,21 +268,21 @@ def get_cp_air_properties(pressure: float,
                           temperature: float,
                           mass_ratio: float = 0.0
                           ) -> np.ndarray:
-    """Get air properties using CoolProp
+    """Get air properties using CoolProp.
 
-        Parameters
-        ----------
-        pressure: [Pa]
-            pressure
-        temperature: [K]
-            temperature
-        mass_ratio: [kg water/kg dry air]
-            kg water/kg dry air
+    Parameters
+    ----------
+    pressure: [Pa]
+        pressure
+    temperature: [K]
+        temperature
+    mass_ratio: [kg water/kg dry air]
+        kg water/kg dry air
 
-        Returns
-        -------
-        return_array: [See AirPropertiesIndex]
-            Property array with columns set by AirPropertiesIndex
+    Returns
+    -------
+    return_array: [See AirPropertiesIndex]
+        Property array with columns set by AirPropertiesIndex
     """
     rho = HAPropsSI('D', 'P', pressure, 'T', temperature, 'W', mass_ratio)
     kine_visc = HAPropsSI('V', 'P', pressure, 'T', temperature, 'W', mass_ratio) / rho
@@ -295,13 +299,13 @@ def get_cp_air_properties(pressure: float,
     return return_array
 
 def plot_air_properties(air_array: np.ndarray) -> None:
-    """Plot air properties vs altitude
+    """Plot air properties vs altitude.
 
-        Parameters
-        ----------
-        air_array: [See AirPropertiesIndex]
-            array of shape (N, len(AirPropertiesIndex)) with columns set by AirPropertiesIndex
-        """
+    Parameters
+    ----------
+    air_array: [See AirPropertiesIndex]
+        array of shape (N, len(AirPropertiesIndex)) with columns set by AirPropertiesIndex
+    """
     plt.figure()
     plt.plot(air_array[:,AirPropertiesIndex.DENSITY],
              air_array[:,AirPropertiesIndex.ALTITUDE],
@@ -336,19 +340,19 @@ def plot_air_properties(air_array: np.ndarray) -> None:
     plt.show(block=False)
 
 def interp_air_properties(air_array: np.ndarray, altitude: float) -> OneDFloatArray:
-    """Interpolate air properties at a given altitude from airArray
+    """Interpolate air properties at a given altitude from airArray.
 
-        Parameters
-        ----------
-        air_array: [See AirPropertiesIndex]
-            array of shape (N, len(AirPropertiesIndex)) with columns set by AirPropertiesIndex
-        altitude: [m]
-            altitude
+    Parameters
+    ----------
+    air_array: [See AirPropertiesIndex]
+        array of shape (N, len(AirPropertiesIndex)) with columns set by AirPropertiesIndex
+    altitude: [m]
+        altitude
 
-        Returns
-        -------
-        air_properties: [See AirPropertiesIndex]
-            array of interpolated properties at the given altitude
+    Returns
+    -------
+    air_properties: [See AirPropertiesIndex]
+        array of interpolated properties at the given altitude
     """
     air_properties = np.empty(len(AirPropertiesIndex))
     for i in AirPropertiesIndex:

@@ -1,9 +1,16 @@
-"""#units.py
+"""
+
 Module for managing units and output formatting in physics calculations.
-This module provides the OutputFormatting class, which allows users to specify
-the desired output units for various physical quantities, including pressure,
-temperature, length, mass, force, time, and volume flow. It also provides methods
-for converting between different units and for formatting output strings."""
+
+Classes
+-------
+OutputFormatting
+    - A class for managing output formatting and unit conversions in physics calculations.
+
+Functions
+---------
+None
+"""
 from pint import Unit, UnitRegistry
 from pint.facets.plain import PlainUnit
 from scipy import constants as csp
@@ -13,6 +20,7 @@ Q_ = UREG.Quantity #type: ignore
 
 class OutputFormatting:
     """Class to manage output formatting and unit conversions for physics calculations."""
+
     def __init__(self,
                  output_SI: bool = True, #pylint: disable=C0103 #noqa: N803
                  vol_flow_unit: Unit | None = None,

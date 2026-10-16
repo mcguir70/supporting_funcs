@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import overload
 
 import scipy.constants as csp
-from numpy import array, empty, linspace, ndarray
+from numpy import array, empty, linspace
 from scipy.optimize import curve_fit
 
 from supporting_funcs.coding.type_hints import FloatArray, FloatOrArray
