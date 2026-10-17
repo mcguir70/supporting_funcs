@@ -28,6 +28,7 @@ import numpy as np
 from scipy.constants import Stefan_Boltzmann as sigma
 from scipy.optimize import root_scalar
 
+from supporting_funcs.coding.type_hints import OneDFloatArray
 from supporting_funcs.physics.bartz import (
     create_bartz_param_class,
 )
@@ -317,7 +318,7 @@ class ThermalModel:
             raise ValueError("Failed to converge on a solution for the inner boundary temperature.")
         heat_flow = area_inner * inner_boundary_condition.compute_heat_flux(soln.root)
 
-        temp_distribution = np.empty(self.layer_count)
+        temp_distribution: OneDFloatArray = np.empty(self.layer_count)
         temp_distribution[0] = soln.root
         for i in range(1, self.layer_count):
             temp_distribution[i] = temp_distribution[i - 1] - heat_flow * resistors[i - 1]
