@@ -1,5 +1,9 @@
-"""# math_help
-A collection of math helper functions."""
+"""A collection of math helper functions.
+
+Functions
+---------
+solve_cubic_positive_real : Solve a cubic equation for positive real roots.
+"""
 import numpy as np
 
 

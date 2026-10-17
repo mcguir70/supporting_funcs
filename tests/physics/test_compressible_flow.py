@@ -79,6 +79,7 @@ OBLIQUE_MAX_TABLE = [
 
 class MiscTests:
     """Miscellaneous tests that don't fit anywhere else."""
+
     def try_help(self, func):
         """Check that the function has a docstring and type hints."""
         assert func.__doc__ is not None
@@ -176,7 +177,8 @@ class TestIsentropicRelations:
         )
 
 class TestMachFromStagnation:
-    """ Test the mach_from_stagnation function."""
+    """Test the mach_from_stagnation function."""
+
     def test_guard_against_invalid_gamma(self, gamma_sweep):
         """Test that the function returns NaN for invalid gamma values."""
         T0 = 300.0 #pylint: disable=C0103 #noqa: N806
@@ -207,8 +209,7 @@ class TestMachFromStagnation:
                              + f"{result[len(invalid_gammas):]}")
 
     def test_calculation(self, gamma_sweep, mach_sweep):
-        """Value Test:
-        Test that the function returns the correct Mach number"""
+        """(Value Test) Test that the function returns the correct Mach number."""
         T0 = 300.0 #pylint: disable=C0103 #noqa: N806
         P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
         R = 287.05 #pylint: disable=C0103 #noqa: N806
@@ -230,7 +231,7 @@ class TestMachFromStagnation:
             )
 
     def test_mach_from_stagnation_rejects_non_boolean_supersonic(self, gamma_air):
-        """Test that the function rejects non-boolean values for the supersonic parameter."""
+        """(Input Test) The function rejects non-boolean values for the supersonic parameter."""
         mach_test = 2.312
         T0 = 300.0 #pylint: disable=C0103 #noqa: N806
         P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
@@ -247,15 +248,15 @@ class TestMachFromPressureRatio:
     """Analytic inversion of the isentropic pressure relation."""
 
     def test_roundtrip(self, mach_sweep, gamma_air):
-        """Test that mach_from_P_ratio inverts P_ratio_from_mach for supersonic Mach numbers."""
-        p_rat = cf.P_ratio_from_mach(mach_sweep, gamma_air)
+        """(Value Test) Test that mach_from_P_ratio inverts P_ratio_from_mach."""
+        p_rat = cf.press_ratio_from_mach(mach_sweep, gamma_air)
         np.testing.assert_allclose(
-            cf.mach_from_P_ratio(p_rat, gamma_air), mach_sweep, rtol=1e-10
+            cf.mach_from_press_ratio(p_rat, gamma_air), mach_sweep, rtol=1e-10
         )
 
     def test_unity_ratio_gives_zero_mach(self, gamma_air):
         """Test that mach_from_P_ratio returns 0 for a pressure ratio of 1."""
-        assert cf.mach_from_P_ratio(1.0, gamma_air) == pytest.approx(0.0, abs=1e-12)
+        assert cf.mach_from_press_ratio(1.0, gamma_air) == pytest.approx(0.0, abs=1e-12)
 
 
 # ---------------------------------------------------------------------------
@@ -266,16 +267,14 @@ class TestMachFromAreaRatio:
 
     @pytest.mark.parametrize("mach_expected", [1.5, 2.0, 3.0, 4.5])
     def test_supersonic_roundtrip_scalar(self, mach_expected, gamma_air):
-        """Test the value of mach_from_area_ratio for a given area ratio matches
-        the expected Mach number from the isentropic relations.
-        """
+        """(Value Test) Test mach_from_area_ratio matches area_ratio_from_mach."""
         a_rat = cf.area_ratio_from_mach(mach_expected, gamma_air)
         assert cf.mach_from_area_ratio(a_rat, gamma_air, supersonic=True) == pytest.approx(
             mach_expected, rel=RTOL_SOLVER
         )
 
     def test_roundtrip_vectorised(self, gamma_air, mach_sweep):
-        """Test that mach_from_area_ratio inverts area_ratio_from_mach arrays too"""
+        """(Implementation Test) mach_from_area_ratio inverts area_ratio_from_mach arrays."""
         a_rat = cf.area_ratio_from_mach(mach_sweep, gamma_air)
         np.testing.assert_allclose(
             cf.mach_from_area_ratio(a_rat,
@@ -286,11 +285,26 @@ class TestMachFromAreaRatio:
         )
 
     def test_broadcasts_gamma_against_area(self, gamma_sweep):
-        """Check that the function can handle broadcasting of gamma against area ratio."""
-        a_rat = np.full(gamma_sweep.shape, 4.0)
+        """(Implementation Test) The function can handle broadcasting of gamma against Ae/At."""
+        a_rat_value = 4.0
+        a_rat = np.full(gamma_sweep.shape, a_rat_value)
         result = cf.mach_from_area_ratio(a_rat,
                                          gamma_sweep,
                                          supersonic = np.full(gamma_sweep.shape, True))
+        assert result.shape == gamma_sweep.shape
+        np.testing.assert_allclose(
+            cf.area_ratio_from_mach(result, gamma_sweep), a_rat, rtol=RTOL_SOLVER
+        )
+        result = cf.mach_from_area_ratio(a_rat_value,
+                                         gamma_sweep,
+                                         supersonic = True)
+        assert result.shape == gamma_sweep.shape
+        np.testing.assert_allclose(
+            cf.area_ratio_from_mach(result, gamma_sweep), a_rat, rtol=RTOL_SOLVER
+        )
+        result = cf.mach_from_area_ratio(a_rat_value,
+                                         gamma_sweep,
+                                            supersonic = np.full(gamma_sweep.shape, False))
         assert result.shape == gamma_sweep.shape
         np.testing.assert_allclose(
             cf.area_ratio_from_mach(result, gamma_sweep), a_rat, rtol=RTOL_SOLVER
@@ -315,10 +329,7 @@ class TestMachFromAreaRatio:
                 )
 
     def test_rejects_bracket_not_spanning_root(self, gamma_air):
-        """Implementation Test:
-        Test that when the provided bracket does not span a root,
-        the function raises a ValueError.
-        """
+        """(Error Test) When the provided bracket does not span a root, raises a ValueError."""
         with pytest.raises(ValueError, match="Invalid bracket"):
             cf.mach_from_area_ratio(
                 1.6875, gamma_air, 1000, 1e-6, mach_lims=np.array([2.5, 5.0])
@@ -329,10 +340,7 @@ class TestMachFromAreaRatio:
             )
 
     def test_rejects_malformed_bracket_shape(self, gamma_air):
-        """Implementation Test:
-        Test that when the provided bracket has an invalid shape,
-        the function raises a ValueError.
-        """
+        """(Error Test) When the provided bracket has an invalid shape, raises a ValueError."""
         with pytest.raises(ValueError, match="mach_lims must be a tuple of"):
             cf.mach_from_area_ratio(
                 1.6875, gamma_air, 1000, 1e-6, mach_lims=np.array([1.0, 2.0, 3.0])
@@ -342,7 +350,7 @@ class TestMachFromAreaRatio:
 # Normal shocks
 # ---------------------------------------------------------------------------
 class TestNormalShock:
-    """Test the normal shock relations"""
+    """Test the normal shock relations."""
 
     @pytest.mark.parametrize(
         "mach_1, mach_2, p_rat, pt_rat", NORMAL_SHOCK_TABLE
@@ -403,30 +411,31 @@ class TestNormalShock:
 # ---------------------------------------------------------------------------
 class TestPrandtlMeyer:
     """Test the Prandtl-Meyer expansion fan relations."""
+
     @pytest.mark.parametrize("mach, nu_deg", PRANDTL_MEYER_TABLE)
     def test_matches_naca_table(self, mach, nu_deg, gamma_air):
-        """Value Test: Check that the Prandtl-Meyer function matches the NACA table values."""
+        """(Value Test) Check that the Prandtl-Meyer function matches the NACA table values."""
         result_rad = cf.prandtl_meyer(mach, gamma_air)
         assert np.degrees(result_rad) == pytest.approx(nu_deg, abs=1e-4)
 
     def test_sonic_angle_is_zero(self, gamma_sweep):
-        """Value Test: nu = 0 at M = 1 for any gamma."""
+        """(Value Test) nu = 0 at M = 1 for any gamma."""
         assert cf.prandtl_meyer(1.0, gamma_sweep) == pytest.approx(0.0)
 
     def test_monotonic_in_mach(self, gamma_air):
-        """Value Test: nu is strictly increasing in M for M > 1."""
+        """(Value Test) nu is strictly increasing in M for M > 1."""
         mach = np.linspace(1.0, 30.0, 300)
         nu_rad = cf.prandtl_meyer(mach, gamma_air)
         assert np.all(np.diff(nu_rad) > 0.0)
 
     def test_bounded_by_maximum(self, gamma_air):
-        """Value Test: nu < nu_max for any M > 1."""
+        """(Value Test) nu < nu_max for any M > 1."""
         mach = np.array([1.5, 5.0, 50.0, 500.0])
         nu_max_rad = cf.max_prandtl_meyer(gamma_air)
         assert np.all(cf.prandtl_meyer(mach, gamma_air) < nu_max_rad)
 
     def test_maximum_matches_closed_form(self, gamma_sweep):
-        """Value Test: nu_max matches the closed-form expression."""
+        """(Value Test) nu_max matches the closed-form expression."""
         expected_rad = (
             0.5
             * np.pi
@@ -437,14 +446,14 @@ class TestPrandtlMeyer:
         )
 
     def test_asymptotic_approach_to_maximum(self, gamma_air):
-        """As M -> inf, nu -> nu_max."""
+        """(Value Test) As M -> inf, nu -> nu_max."""
         nu_max_rad = cf.max_prandtl_meyer(gamma_air)
         assert cf.prandtl_meyer(1e5, gamma_air) == pytest.approx(
             nu_max_rad, rel=1e-4
         )
 
     def test_max_turning_angle_is_complement(self, gamma_air):
-        """Value Test: The maximum turning angle for an expansion fan is nu_max - nu(M1)."""
+        """(Value Test) The maximum turning angle for an expansion fan is nu_max - nu(M1)."""
         mach_1 = 2.0
         expected_rad = cf.max_prandtl_meyer(gamma_air) - cf.prandtl_meyer(
             mach_1, gamma_air
@@ -454,8 +463,10 @@ class TestPrandtlMeyer:
         ) == pytest.approx(expected_rad)
 
     def test_subsonic_input_is_not_a_number(self, gamma_air):
-        """Value Test: nu is undefined below M = 1; NaN is acceptable, a wrong float
-        is not."""
+        """(Value Test) nu is undefined below M = 1.
+
+        NaN is acceptable, a wrong float is not.
+        """
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result = cf.prandtl_meyer(0.5, gamma_air)
@@ -466,13 +477,16 @@ class TestExpansionFan:
     """Test the expansion fan relations."""
 
     def test_zero_deflection_is_identity(self, gamma_air):
-        """Value Test: A zero deflection angle returns the same Mach number."""
+        """(Value Test) A zero deflection angle returns the same Mach number."""
         result = cf.expansion_fan_mach_2(2.0, 0.0, gamma_air)
         assert result == pytest.approx(2.0, rel=1e-4)
 
     @pytest.mark.parametrize("delta_deg", [5.0, 10.0, 20.0])
     def test_inverts_prandtl_meyer(self, delta_deg, gamma_air):
-        """Value Test: nu(M2) - nu(M1) must equal the turning angle."""
+        """(Value Test) Check that the expansion fan inverts the Prandtl-Meyer function.
+
+        nu(M2) - nu(M1) must equal the turning angle.
+        """
         mach_1 = 2.0
         delta_rad = np.radians(delta_deg)
         mach_2 = cf.expansion_fan_mach_2(mach_1, delta_rad, gamma_air)
@@ -481,7 +495,7 @@ class TestExpansionFan:
         assert nu_2 - nu_1 == pytest.approx(delta_rad, abs=1e-5)
 
     def test_expansion_accelerates_flow(self, gamma_air):
-        """Value Test: An expansion fan always accelerates the flow."""
+        """(Value Test) An expansion fan always accelerates the flow."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             mach_2 = cf.expansion_fan_mach_2(2.0, np.radians(15.0), gamma_air)
@@ -492,7 +506,7 @@ class TestExpansionFan:
 # Oblique shocks
 # ---------------------------------------------------------------------------
 class TestObliqueShockAngles:
-    """maxObliqueShockAngle is correct; the theta -> delta map is not."""
+    """Test the oblique shock relations."""
 
     @pytest.mark.parametrize(
         "mach_1, theta_max_deg, delta_max_deg", OBLIQUE_MAX_TABLE
@@ -504,23 +518,20 @@ class TestObliqueShockAngles:
         delta_max_deg, #pylint: disable=W0613
         gamma_air
     ):
-        """Value Test:
-        Test that the maximum shock angle for an oblique shock matches the reference values."""
+        """(Value Test) Test that the maximum shock angle for an oblique shock matches reference."""
         result_rad = cf.oblique_shock_max_angle(mach_1, gamma_air)
         assert np.degrees(result_rad) == pytest.approx(
             theta_max_deg, abs=5e-3
         )
 
-    def test_max_shock_angle_bounded_by_normal_shock(self, gamma_air):
-        """Value Test: The maximum shock angle is always less than 90 degrees."""
-        mach_1 = np.linspace(1.01, 20.0, 100)
-        theta_rad = cf.oblique_shock_max_angle(mach_1, gamma_air)
+    def test_max_shock_angle_bounded_by_normal_shock(self, gamma_air, mach_supersonic):
+        """(Value Test) The maximum shock angle is always less than 90 degrees."""
+        theta_rad = cf.oblique_shock_max_angle(mach_supersonic, gamma_air)
         assert np.all(theta_rad > 0.0)
         assert np.all(theta_rad < 0.5 * np.pi)
 
     def test_sonic_limit_is_mach_wave(self, gamma_air):
-        """Value Test:
-        At M1 = 1 the shock degenerates to a normal Mach wave."""
+        """(Value Test) At M1 = 1 the shock degenerates to a normal Mach wave."""
         assert cf.oblique_shock_max_angle(1.0, gamma_air) == pytest.approx(
             0.5 * np.pi, abs=1e-6
         )
@@ -531,8 +542,7 @@ class TestObliqueShockAngles:
     def test_deflection_from_shock_angle(
         self, mach_1, theta_deg, delta_deg, gamma_air
     ):
-        """Value Test:
-        Test that the deflection angle for an oblique shock matches the reference values."""
+        """(Value Test) The deflection angle for an oblique shock matches reference."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result_rad = cf.oblique_shock_delta_from_theta(
@@ -549,8 +559,7 @@ class TestObliqueShockAngles:
         delta_max_deg,
         gamma_air
     ):
-        """Value Test: Test that the maximum deflection angle for an
-        oblique shock matches the reference values."""
+        """(Value Test) The maximum deflection angle for an oblique shock matches reference."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result_rad = cf.oblique_shock_max_deflection(mach_1, gamma_air)
@@ -559,7 +568,7 @@ class TestObliqueShockAngles:
         )
 
     def test_subsonic_normal_component_returns_nan(self, gamma_air):
-        """Implementation Test: theta below the Mach angle gives Mn1 < 1: physically invalid."""
+        """(Implementation Test) theta below the Mach angle gives Mn1 < 1: physically invalid."""
         mach_angle_rad = np.arcsin(1.0 / 2.0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -574,7 +583,7 @@ class TestObliqueShockAngles:
     def test_weak_solution_recovers_shock_angle(
         self, mach_1, theta_deg, delta_deg, gamma_air
     ):
-        """Value Test: The weak solution should recover the expected shock angle."""
+        """(Value Test) The weak solution should recover the expected shock angle."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             _, _, theta_rad = cf.oblique_shock(
@@ -583,11 +592,7 @@ class TestObliqueShockAngles:
         assert np.degrees(theta_rad) == pytest.approx(theta_deg, abs=1e-2)
 
     def test_strong_solution_exceeds_weak(self, gamma_air):
-        """Both roots must be finite -- the NaN check is load-bearing.
-
-        Without it a root finder fed a NaN residual returns its initial
-        bracket midpoint, which satisfies the ordering by accident.
-        """
+        """(Value Test) The strong solution should exceed the weak solution."""
         delta_rad = np.radians(10.0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -603,7 +608,7 @@ class TestObliqueShockAngles:
         assert np.degrees(theta_strong) == pytest.approx(83.70008, abs=1e-2)
 
     def test_normal_shock_limit(self, gamma_air: float):
-        """delta -> 0 with a strong shock recovers the normal shock."""
+        """(Value Test) When delta -> 0 with a strong shock recovers the normal shock."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             mach_2, pt_rat, theta_rad = cf.oblique_shock(
@@ -623,8 +628,9 @@ class TestObliqueShockAngles:
 # ---------------------------------------------------------------------------
 class TestThrustCoefficients:
     """Test the thrust coefficient functions."""
+
     def test_cf(self, gamma_sweep):
-        "Value Test: Check that the thrust coefficient matches the definition."
+        """(Value Test) Check that the thrust coefficient matches the definition."""
         T0 = 3000.0 #pylint: disable=C0103 #noqa: N806
         cp = 1011.0
         pressure_chamber_pa = 2.0e6
@@ -656,9 +662,7 @@ class TestThrustCoefficients:
     def test_cfv_exceeds_cf_at_positive_back_pressure(
         self, gamma_combustion: float
     ):
-        """Value Test:
-        The vacuum thrust coefficient exceeds the actual thrust coefficient
-        when the nozzle is firing into an atmosphere."""
+        """(Value Test) cfv > cf at non-zero back pressure."""
         area_ratio = 4.0
         pressure_chamber_pa = 2.0e6
         pressure_back_pa = 101325.0
@@ -672,16 +676,14 @@ class TestThrustCoefficients:
         assert cf_value < cfv
 
     def test_cf_equals_cfv_in_vacuum(self, gamma_combustion: float):
-        """Value Test:
-        the vacuum thrust coefficient equals the actual thrust coefficient
-        when the nozzle is firing into a vacuum."""
+        """(Value Test) cf == cfv at zero back pressure."""
         area_ratio = 4.0
         cfv = cf.get_cfv(gamma_combustion, area_ratio)
         cf_value = cf.get_cf(gamma_combustion, area_ratio, 2.0e6, 0.0)
         assert cf_value == pytest.approx(cfv)
 
     def test_cf_from_cfv_matches_get_cf(self, gamma_combustion: float):
-        """Implementation Test: The get_cf_from_cfv function returns the same value as get_cf."""
+        """(Implementation Test) The get_cf_from_cfv function returns the same value as get_cf."""
         area_ratio = 4.0
         pressure_chamber_pa = 2.0e6
         pressure_back_pa = 101325.0
@@ -698,13 +700,16 @@ class TestThrustCoefficients:
         )
 
     def test_cfv_increases_with_area_ratio(self, gamma_combustion):
-        """Value Test: The vacuum thrust coefficient increases with the area ratio."""
+        """(Value Test) The vacuum thrust coefficient increases with the area ratio."""
         area_ratio = np.array([2.0, 5.0, 10.0, 25.0, 50.0])
         cfv = cf.get_cfv(gamma_combustion, area_ratio)
         assert np.all(np.diff(cfv) > 0.0)
 
     def test_cfv_bounded_by_theoretical_maximum(self, gamma_combustion):
-        """cfv < sqrt(2*g**2/(g-1) * (2/(g+1))**((g+1)/(g-1))) as Pe -> 0."""
+        """(Value Test) The vacuum thrust coefficient is bounded by the theoretical maximum.
+
+        cfv < sqrt(2*g**2/(g-1) * (2/(g+1))**((g+1)/(g-1))) as Pe -> 0.
+        """
         gamma = gamma_combustion
         cfv_max = np.sqrt(
             (2.0 * gamma**2 / (gamma - 1.0))
@@ -713,11 +718,8 @@ class TestThrustCoefficients:
         cfv = cf.get_cfv(gamma, np.array([2.0, 10.0, 50.0]))
         assert np.all(cfv < cfv_max)
 
-    def test_explicit_pressure_ratio_overrides_area_ratio(
-        self, gamma_combustion
-    ):
-        """Implementation Test:
-        The get_cfv function returns the same value when the pressure ratio is provided."""
+    def test_explicit_pressure_ratio_overrides_area_ratio(self, gamma_combustion):
+        """(Value Test) The get_cfv function returns the same value with pip and ae_at."""
         area_ratio = 4.0
         pressure_ratio_computed = cf.P_ratio_from_mach(
             cf.mach_from_area_ratio(area_ratio, gamma_combustion, supersonic=True), gamma_combustion
@@ -726,12 +728,8 @@ class TestThrustCoefficients:
             gamma_combustion, area_ratio, pressure_ratio_computed
         ) == pytest.approx(cf.get_cfv(gamma_combustion, area_ratio))
 
-    def test_cf_max_at_is_at_ambient(
-            self, gamma_combustion
-            ):
-        """Value Test:
-        At Pe = Pa, the nozzle is perfectly expanded and Cf is maximised."""
-
+    def test_cf_max_at_is_at_ambient(self, gamma_combustion):
+        """(Value Test) At Pe = Pa, the nozzle is perfectly expanded and Cf is maximised."""
         def _objective(eps, pressure_chamber_pa, pressure_back_pa):
             return -cf.get_cf(gamma_combustion, eps, pressure_chamber_pa, pressure_back_pa)
         pressure_chamber_pa = 2.0e6
@@ -757,10 +755,13 @@ class TestThrustCoefficients:
 # Mass flux
 # ---------------------------------------------------------------------------
 class TestMassFlux:
-    """Test the mass flux function"""
+    """Test the mass flux function."""
+
     def test_choked_flux_matches_closed_form(self, gamma_combustion):
-        """At M = 1, mdot/A = P0 * sqrt(g/(R*T0)) *
-        (2/(g+1))**((g+1)/(2*(g-1)))."""
+        """(Value Test) The function returns the correct mass flux at the sonic condition.
+
+        At M = 1, mdot/A = P0 * sqrt(g/(R*T0)) * (2/(g+1))**((g+1)/(2*(g-1))).
+        """
         gamma = gamma_combustion
         temperature_stagnation_k = 3000.0
         pressure_stagnation_pa = 2.0e6
@@ -783,7 +784,7 @@ class TestMassFlux:
         ) == pytest.approx(expected_kg_per_m2_s, rel=1e-12)
 
     def test_flux_is_zero_at_rest(self, gamma_combustion):
-        """At M = 0, mdot/A = 0."""
+        """(Value Test) At M = 0, mdot/A = 0."""
         assert cf.m_flux_from_stagnation(
             3000.0, 2.0e6, gamma_combustion, 320.0, 0.0
         ) == pytest.approx(0.0)
@@ -799,8 +800,7 @@ class TestMassFlux:
     def test_flux_scales_linearly_with_stagnation_pressure(
         self, gamma_combustion
     ):
-        """Value Test:
-        The mass flux is proportional to the stagnation pressure."""
+        """(Value Test) The mass flux scales with to the stagnation pressure."""
         base = cf.m_flux_from_stagnation(
             3000.0, 1.0e6, gamma_combustion, 320.0, 1.0
         )
@@ -812,8 +812,7 @@ class TestMassFlux:
     def test_flux_scales_with_inverse_sqrt_stagnation_temperature(
         self, gamma_combustion
     ):
-        """Value Test:
-        The mass flux scales with the inverse square root of the stagnation temperature."""
+        """(Value Test) The mass flux scales with the inverse square root of the stagnation temp."""
         base = cf.m_flux_from_stagnation(
             1000.0, 1.0e6, gamma_combustion, 320.0, 1.0
         )
@@ -827,14 +826,14 @@ class TestRecoveryTemperature:
     """Test the recovery temperature function."""
 
     def test_zero_mach_recovers_freestream(self):
-        """At M = 0, Tr = T0."""
+        """(Value Test) At M = 0, Tr = T0."""
         temperature_freestream_k = 300.0
         assert cf.T_recovery(
             temperature_freestream_k, 0.71, 1.4, 0.0
         ) == pytest.approx(temperature_freestream_k)
 
     def test_unity_prandtl_gives_stagnation_temperature(self):
-        """r = Pr**(1/3) = 1 when Pr = 1, so Tr collapses to T0."""
+        """(Value Test) r = Pr**(1/3) = 1 when Pr = 1, so Tr collapses to T0."""
         temperature_freestream_k = 300.0
         gamma = 1.4
         mach = 3.0
@@ -844,7 +843,7 @@ class TestRecoveryTemperature:
         ) == pytest.approx(expected_k)
 
     def test_bounded_below_stagnation_for_air(self):
-        """Pr < 1 for air, so Tr < T0."""
+        """(Value Test) Pr < 1 for air, so Tr < T0."""
         temperature_freestream_k = 300.0
         gamma = 1.4
         mach = 4.0
@@ -894,20 +893,20 @@ class TestTypeContract:
 
     @pytest.mark.parametrize("name, args, kwargs", SCALAR_IN_SCALAR_OUT)
     def test_scalar_input_returns_python_float(self, name, args, kwargs):
-        """Implementation Test: Check that the function returns a Python float for scalar inputs."""
+        """(Implementation Test) The function returns a Python float for scalar inputs."""
         result = getattr(cf, name)(*args, **kwargs)
         assert isinstance(result, float), f"{name} returned {type(result)}"
         assert not isinstance(result, np.ndarray)
 
     @pytest.mark.parametrize("name, args, kwargs", ARRAY_IN_ARRAY_OUT)
     def test_array_input_returns_ndarray(self, name, args, kwargs):
-        """Implementation Test: Check that the function returns a NumPy array for array inputs."""
+        """(Implementation Test) The function returns a NumPy array for array inputs."""
         array_args = tuple(np.atleast_1d(np.asarray(a)) for a in args)
         result = getattr(cf, name)(*array_args, **kwargs)
         assert isinstance(result, np.ndarray), f"{name}: {type(result)}"
 
     def test_mach_from_area_ratio_preserves_array_shape_when_multi_element(self):
-        """Implementation Test: Multi-element input does keep its shape -- only size 1 breaks."""
+        """(Implementation Test) Multi-element input does keep its shape -- only size 1 breaks."""
         result = cf.mach_from_area_ratio(np.array([1.6875, 4.0]),
                                          1.4,
                                          supersonic=np.array([True, True]))
@@ -915,7 +914,7 @@ class TestTypeContract:
         assert result.shape == (2,)
 
     def test_mach_from_area_ratio_preserves_array_shape_when_size_one(self):
-        """Implementation Test: Size-1 input does keep its shape."""
+        """(Implementation Test) Size-1 input does keep its shape."""
         result = cf.mach_from_area_ratio(np.array([1.6875]), 1.4, supersonic=np.array([True]))
         assert isinstance(result, np.ndarray)
         assert result.shape == (1,)
@@ -933,8 +932,7 @@ class TestTypeContract:
         ],
     )
     def test_broadcasting_shape(self, name):
-        """Implementation Test:
-        Check that the function can handle broadcasting of Mach number against gamma."""
+        """(Implementation Test) Check broadcasting of Mach number against gamma."""
         mach = np.linspace(1.5, 4.0, 7)[:, None]
         gamma = np.array([1.2, 1.3, 1.4])[None, :]
         result = getattr(cf, name)(mach, gamma)
@@ -945,8 +943,7 @@ class TestTypeContract:
         ["P_ratio_from_mach", "T_ratio_from_mach", "h_ratio_from_mach", "normal_shock_mach_2"]
     )
     def test_scalar_and_array_agree(self, name, gamma_air):
-        """Implementation Test:
-        Check that the function returns the same values for scalar and array inputs."""
+        """(Implementation Test) Returns the same values for scalar and array inputs."""
         func = getattr(cf, name)
         mach = np.array([1.5, 2.0, 3.0])
         np.testing.assert_allclose(
@@ -956,15 +953,13 @@ class TestTypeContract:
         )
 
     def test_normal_shock_returns_two_element_tuple(self, gamma_air):
-        """Implementation Test:
-        Check that the normal_shock function returns a two-element tuple."""
+        """(Implementation Test): The normal_shock function returns a two-element tuple."""
         result = cf.normal_shock(2.0, gamma_air)
         assert isinstance(result, tuple)
         assert len(result) == 2
 
     def test_oblique_shock_returns_three_element_tuple(self, gamma_air):
-        """Implementation Test:
-        Check that the oblique_shock function returns a three-element tuple."""
+        """(Implementation Test) The oblique_shock function returns a three-element tuple."""
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result = cf.oblique_shock(2.0, float(np.radians(10.0)), gamma_air)

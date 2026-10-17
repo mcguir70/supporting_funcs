@@ -576,15 +576,20 @@ class TestCEAComputations:
     #     # max_cols = 8
     #     # nrows = (len(trace_species) + max_cols - 1) // max_cols
     #     # for i in range(nrows):
-    #     #     print(" ".join("{0:15s}".format(trace_species[j]) for j in range(i * max_cols, min((i + 1) * max_cols, len(trace_species)))))
+            # print(" ".join("{0:15s}".format(trace_species[j])
+            #                for j in range(i * max_cols,
+            #                               min((i + 1) * max_cols,
+            #                                   len(trace_species)))))
 
 
     #     incorrect_lines = []
-    #     for idx_line, (line_calc, line_ref) in enumerate(zip(soln_str.splitlines(), self.rp_1311_11_val.splitlines())):
+        # for idx_line, (line_calc, line_ref) in enumerate(zip(soln_str.splitlines(),
+        #                                                      self.rp_1311_11_val.splitlines())):
     #         if line_calc.strip() != line_ref.strip():
     #             incorrect_lines.append((idx_line, line_calc, line_ref))
     #     if incorrect_lines:
-    #         error_msg = f"CEA wrapper output does not match the RP-1311-11 propellent mixture output.\n"
+            # error_msg = (f"CEA wrapper output does not match the"
+            #              " RP-1311-11 propellent mixture output.\n")
     #         error_msg += f"Number of incorrect lines: {len(incorrect_lines)}\n"
     #         for idx_line, line_calc, line_ref in incorrect_lines:
     #             error_msg += f"Line {idx_line}:\n"
@@ -592,9 +597,11 @@ class TestCEAComputations:
     #             error_msg += f"  Reference:  {line_ref}\n"
     #         raise AssertionError(error_msg)
 
-    #     assert soln_str == self.rp_1311_11_val, "CEA wrapper output does not match the RP-1311-11 propellent mixture output."
+        # assert soln_str == self.rp_1311_11_val, ("CEA wrapper output does not match the"
+        #                                          " RP-1311-11 propellent mixture output.")
 
-    #     raise NotImplementedError("Test for RP-1311-11 propellent mixture is not fully implemented yet.")
+        # raise NotImplementedError("Test for RP-1311-11 propellent mixture is "
+        #                           "not fully implemented yet.")
 
 class TestCEAOutput:
     """Test the implementation of the CEA wrapper for consistency."""
@@ -725,7 +732,19 @@ class TestPropellent:
         mixture_fu.solve(p_c=Q_(500, "psi").to("Pa").magnitude, ae_at=50.0)
         mixture_ox.solve(p_c=Q_(500, "psi").to("Pa").magnitude, ae_at=50.0)
 
-        for arg in ["temperature", "pressure", "conductivity", "cp", "cv", "Pr", "viscosity", "density", "enthalpy", "internal_energy", "gibbs_energy", "entropy"]:
+        for arg in ["temperature",
+                    "pressure",
+                    "conductivity",
+                    "cp",
+                    "cv",
+                    "Pr",
+                    "viscosity",
+                    "density",
+                    "enthalpy",
+                    "internal_energy",
+                    "gibbs_energy",
+                    "entropy"]:
             fu_value = getattr(mixture_fu.solution, arg)
             ox_value = getattr(mixture_ox.solution, arg)
-            np.testing.assert_allclose(fu_value, ox_value, rtol=1e-3, err_msg=f"Monopropellant test failed for {arg}.")
+            np.testing.assert_allclose(fu_value, ox_value, rtol=1e-3,
+                                       err_msg=f"Monopropellant test failed for {arg}.")

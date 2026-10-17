@@ -1,4 +1,4 @@
-
+"""Test suite for the atmosphere module in supporting_funcs.physics."""
 import numpy as np
 from tests.physics.conftest import RTOL_SOLVER, RTOL_TABLE
 
@@ -6,6 +6,8 @@ from supporting_funcs.physics import atmosphere
 
 
 class TestAtmosphere:
+    """Test suite for the atmosphere module in supporting_funcs.physics."""
+
     air_properties = atmosphere.AirProperties()
     #TODO: Add more tests for the atmosphere module, including edge cases and error handling.
 
