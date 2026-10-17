@@ -259,7 +259,7 @@ class ThermalModel:
                                                       inner_boundary_condition: BoundaryCondition,
                                                       outer_boundary_condition: BoundaryCondition,
                                                       temp_limits: tuple[float, float]
-                                                      ) -> tuple[float, float]:
+                                                      ) -> tuple[np.ndarray, float]:
         """Calculate the steady-state temperature distribution across the thermal layers.
 
         Parameters
@@ -273,8 +273,8 @@ class ThermalModel:
 
         Returns
         -------
-        temp_inner: [K]
-            The computed inner boundary temperature that satisfies the heat flux balance.
+        temp_distribution: [K]
+            The computed temperature on the inner surface of the thermal layers.
         heat_flow: [W/m^n]
             The heat flow through the thermal layers, where n depends on the shape of the layers
             (2 for planar, 1 for cylindrical, 2 for spherical).
@@ -315,4 +315,10 @@ class ThermalModel:
         soln = root_scalar(_err_func, bracket=temp_limits, method='brentq')
         if not soln.converged:
             raise ValueError("Failed to converge on a solution for the inner boundary temperature.")
-        return soln.root, area_inner * inner_boundary_condition.compute_heat_flux(soln.root)
+        heat_flow = area_inner * inner_boundary_condition.compute_heat_flux(soln.root)
+
+        temp_distribution = np.empty(self.layer_count)
+        temp_distribution[0] = soln.root
+        for i in range(1, self.layer_count):
+            temp_distribution[i] = temp_distribution[i - 1] - heat_flow * resistors[i - 1]
+        return temp_distribution, heat_flow

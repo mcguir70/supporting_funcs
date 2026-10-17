@@ -1,6 +1,7 @@
-"""# manual_integrat_ivp
-An implementation of the 4th-order Runge-Kutta method.
-Useful to allow actions to be taken at each full step of the integration, such as controller runs"""
+"""(NOT IMPLEMENTED) An implementation of the 4th-order Runge-Kutta method.
+
+Useful to allow actions to be taken at each full step of the integration, such as controller runs.
+"""
 # from dataclasses import dataclass
 # from typing import Callable, Iterable, Sequence
 

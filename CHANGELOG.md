@@ -1,6 +1,13 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.0.A
+Connor McGuire
+### 2026-10-17
+Changed compute_steady_state_temperature_distribution to return all surfaces instead of just the inner boundary temperature.
+Formatting changes to many files to bring into compliance with ruff.
+Removed TODO: XXX from ruff checks for git commit checks, but left them in the .toml. This allows for the TODOs to be seen in the code, but not block commits.
+
 ## 0.0.9
 Connor McGuire
 ### 2026-10-15
