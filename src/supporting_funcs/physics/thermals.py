@@ -470,7 +470,6 @@ class ThermalModel(ThermalElement):
     def compute_steady_state_temperature_distribution(self,
                                                       inner_boundary_condition: BoundaryCondition,
                                                       outer_boundary_condition: BoundaryCondition,
-                                                      temp_limits: tuple[float, float],
                                                       *,
                                                       leaf_output: bool = False
                                                       ) -> tuple[OneDFloatArray, float]:
@@ -482,8 +481,6 @@ class ThermalModel(ThermalElement):
             The boundary condition at the inner surface of the thermal model.
         outer_boundary_condition: BoundaryCondition
             The boundary condition at the outer surface of the thermal model.
-        temp_limits: [K, K]
-            A tuple containing the lower and upper limits for the inner boundary temperature.
         leaf_output: bool, optional
             If True, return the temperature distribution for each leaf layer;
             otherwise, return for each top-level layer (default is False).
@@ -491,36 +488,70 @@ class ThermalModel(ThermalElement):
         Returns
         -------
         temp_distribution: [K]
-            The computed temperature on the inner surface of the thermal layers.
+            The computed temperatures on the surfaces of the thermal layers.
+            (First element is the inner surface)
         heat_flow: [W/m^n]
-            The heat flow out of the thermal layers (Positive for hot inner, cold outer).
+            The heat flow out of the thermal layers (Positive for +r/+q (hot inner, cold outer)).
             n depends on the shape of the layers
         """
         total_resistance = self.resistance  # Cache
         inner_area = self.inner_area  # Cache
         outer_area = self.outer_area  # Cache
+        if isinstance(inner_boundary_condition, ConstantHeatFluxBoundaryCondition):
+            if isinstance(outer_boundary_condition, ConstantHeatFluxBoundaryCondition):
+                if inner_boundary_condition.heat_flux * outer_boundary_condition.heat_flux < 0:
+                    raise ValueError("Inner and outer heat fluxes must have the same sign.")
+                if (inner_boundary_condition.heat_flux * inner_area
+                    + outer_boundary_condition.heat_flux * outer_area) != 0:
+                    raise ValueError("Inner and outer heat fluxes must be equal and opposite.")
+            inner_inf_temp = max(-inner_boundary_condition.heat_flux * 1e12, 0.0)
+        else:
+            inner_inf_temp = inner_boundary_condition.infinite_temperature
 
-        def _err_func(temp_inner_wall: float) -> float:
-            """Compute the difference in heat flux between the inner and outer boundaries."""
+        if isinstance(outer_boundary_condition, ConstantHeatFluxBoundaryCondition):
+            outer_inf_temp = max(-outer_boundary_condition.heat_flux * 1e12, 0.0)
+        else:
+            outer_inf_temp = outer_boundary_condition.infinite_temperature
+
+        def _err_func_hot_in(temp_outer_wall: float) -> float:
+            """Compute the difference in heat flux between the inner and outer boundaries.
+
+            Assumes the inner boundary is hotter than the outer boundary.
+            May not converge if the inner boundary is colder than the outer boundary.
+            """
+            heat_outer = outer_area * outer_boundary_condition.compute_heat_flux(temp_outer_wall)
+            temp_inner_wall = temp_outer_wall + heat_outer * total_resistance
+            heat_inner = inner_area * inner_boundary_condition.compute_heat_flux(temp_inner_wall)
+            return heat_inner + heat_outer
+
+        def _err_func_cold_in(temp_inner_wall: float) -> float:
+            """Compute the difference in heat flux between the inner and outer boundaries.
+
+            Assumes the inner boundary is colder than the outer boundary.
+            May not converge if the inner boundary is hotter than the outer boundary.
+            """
             heat_inner = inner_area * inner_boundary_condition.compute_heat_flux(temp_inner_wall)
             temp_outer = temp_inner_wall + heat_inner * total_resistance
             heat_outer = outer_area * outer_boundary_condition.compute_heat_flux(temp_outer)
             return heat_inner + heat_outer
 
-        if temp_limits[0] >= temp_limits[1]:
-            raise ValueError("Lower temperature limit must be less than upper temperature limit.")
-        if temp_limits[0] < 0 or temp_limits[1] < 0:
-            raise ValueError("Temperature limits must be non-negative.")
-
-        soln = root_scalar(_err_func, bracket=temp_limits, method='brentq')
-        if not soln.converged:
-            raise ValueError("Failed to converge on a solution.")
-
-        heat_flow = inner_area * (-inner_boundary_condition.compute_heat_flux(soln.root))
+        if inner_inf_temp == outer_inf_temp:
+            heat_flow = 0
+            temp_inner_wall = inner_inf_temp
+        elif outer_inf_temp > inner_inf_temp:
+            soln = root_scalar(_err_func_cold_in, bracket=(inner_inf_temp, outer_inf_temp),
+                               method='brentq')
+            heat_flow = -inner_area * inner_boundary_condition.compute_heat_flux(soln.root)
+            temp_inner_wall = soln.root
+        else:
+            soln = root_scalar(_err_func_hot_in, bracket=(outer_inf_temp, inner_inf_temp),
+                               method='brentq')
+            heat_flow = outer_area * outer_boundary_condition.compute_heat_flux(soln.root)
+            temp_inner_wall = soln.root + heat_flow * total_resistance
 
         elements = self.leaf_layers if leaf_output else self.layers
         resistances = np.array([element.resistance for element in elements])
         temp_distribution: OneDFloatArray = np.empty(resistances.size + 1)
-        temp_distribution[0] = soln.root
-        temp_distribution[1:] = soln.root - heat_flow * np.cumsum(resistances)
+        temp_distribution[0] = temp_inner_wall
+        temp_distribution[1:] = temp_inner_wall - heat_flow * np.cumsum(resistances)
         return temp_distribution, heat_flow
