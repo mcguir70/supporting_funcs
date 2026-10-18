@@ -16,6 +16,7 @@ Four kinds of test appear here, in rough order of value:
 
 All Units are SI base (Radians for angles).
 """
+import re
 import warnings
 
 import numpy as np
