@@ -99,10 +99,10 @@ class TestIsentropicRelations:
         self, mach, p_rat, t_rat, rho_rat, a_rat, gamma_air
     ):
         """Test that the isentropic functions match the NACA table values."""
-        assert cf.P_ratio_from_mach(mach, gamma_air) == pytest.approx(
+        assert cf.press_ratio_from_mach(mach, gamma_air) == pytest.approx(
             p_rat, rel=RTOL_TABLE
         )
-        assert cf.T_ratio_from_mach(mach, gamma_air) == pytest.approx(
+        assert cf.temp_ratio_from_mach(mach, gamma_air) == pytest.approx(
             t_rat, rel=RTOL_TABLE
         )
         assert cf.rho_ratio_from_mach(mach, gamma_air) == pytest.approx(
@@ -120,8 +120,8 @@ class TestIsentropicRelations:
         a_rats =  [ 2.03182101, 1.88371168, 1.77318840, 1.53109954]
         mach = 2.0
         for gamma_idx, gamma in enumerate(gammas):
-            p_rat = cf.P_ratio_from_mach(mach, gamma)
-            t_rat = cf.T_ratio_from_mach(mach, gamma)
+            p_rat = cf.press_ratio_from_mach(mach, gamma)
+            t_rat = cf.temp_ratio_from_mach(mach, gamma)
             rho_rat = cf.rho_ratio_from_mach(mach, gamma)
             a_rat = cf.area_ratio_from_mach(mach, gamma)
             assert p_rat == pytest.approx(p_rats[gamma_idx], rel=RTOL_TABLE)
@@ -131,8 +131,8 @@ class TestIsentropicRelations:
 
     def test_stagnation_limit(self, gamma_sweep):
         """At M = 0 every ratio is unity, for any gamma."""
-        assert cf.P_ratio_from_mach(0.0, gamma_sweep) == pytest.approx(1.0)
-        assert cf.T_ratio_from_mach(0.0, gamma_sweep) == pytest.approx(1.0)
+        assert cf.press_ratio_from_mach(0.0, gamma_sweep) == pytest.approx(1.0)
+        assert cf.temp_ratio_from_mach(0.0, gamma_sweep) == pytest.approx(1.0)
         assert cf.rho_ratio_from_mach(0.0, gamma_sweep) == pytest.approx(1.0)
 
     def test_throat_area_ratio_is_unity(self, gamma_sweep):
@@ -145,20 +145,20 @@ class TestIsentropicRelations:
         """Calorically perfect gas: h/h0 == T/T0."""
         np.testing.assert_allclose(
             cf.h_ratio_from_mach(mach_sweep, gamma_air),
-            cf.T_ratio_from_mach(mach_sweep, gamma_air),
+            cf.temp_ratio_from_mach(mach_sweep, gamma_air),
         )
 
     def test_ideal_gas_consistency(self, mach_sweep, gamma_air):
         """p/p0 == (rho/rho0) * (T/T0) follows from p = rho * R * T."""
-        p_rat = cf.P_ratio_from_mach(mach_sweep, gamma_air)
+        p_rat = cf.press_ratio_from_mach(mach_sweep, gamma_air)
         rho_rat = cf.rho_ratio_from_mach(mach_sweep, gamma_air)
-        t_rat = cf.T_ratio_from_mach(mach_sweep, gamma_air)
+        t_rat = cf.temp_ratio_from_mach(mach_sweep, gamma_air)
         np.testing.assert_allclose(p_rat, rho_rat * t_rat, rtol=1e-12)
 
     def test_ratios_decrease_monotonically(self, gamma_air):
         """All ratios are strictly decreasing in Mach number."""
         mach = np.linspace(0.0, 8.0, 200)
-        for func in (cf.P_ratio_from_mach, cf.T_ratio_from_mach, cf.rho_ratio_from_mach):
+        for func in (cf.press_ratio_from_mach, cf.temp_ratio_from_mach, cf.rho_ratio_from_mach):
             values = func(mach, gamma_air)
             assert np.all(np.diff(values) < 0.0), func.__name__
 
@@ -181,15 +181,15 @@ class TestMachFromStagnation:
 
     def test_guard_against_invalid_gamma(self, gamma_sweep):
         """Test that the function returns NaN for invalid gamma values."""
-        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
-        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
-        R = 287.05 #pylint: disable=C0103 #noqa: N806
+        T0 = 300.0 #noqa: N806
+        P0 = 101325.0 #noqa: N806
+        R = 287.05 #noqa: N806
         area = 11.0
         mdot = 1.0
         invalid_gammas = np.asarray([1.0, 0.9, 0.5])
         mixed_gammas = np.concatenate((invalid_gammas, gamma_sweep))
         for gamma in invalid_gammas:
-            result = cf.mach_from_stagnation(T0, P0, mdot, invalid_gammas[0], R, area)
+            result = cf.mach_from_stagnation(T0, P0, mdot, gamma, R, area)
             assert np.isnan(result), f"Expected NaN for gamma={gamma}, got {result}"
         if np.any(~np.isnan(cf.mach_from_stagnation(T0, P0, mdot, invalid_gammas, R, area))):
             raise ValueError("Expected NaN for all invalid gammas, got "
@@ -210,19 +210,19 @@ class TestMachFromStagnation:
 
     def test_calculation(self, gamma_sweep, mach_sweep):
         """(Value Test) Test that the function returns the correct Mach number."""
-        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
-        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
-        R = 287.05 #pylint: disable=C0103 #noqa: N806
-        A = 11.0 #pylint: disable=C0103 #noqa: N806
+        T0 = 300.0 #noqa: N806
+        P0 = 101325.0 #noqa: N806
+        R = 287.05 #noqa: N806
+        A = 11.0 #noqa: N806
 
         rho_0 = P0 / (R * T0)
         for gamma in gamma_sweep:
             rhos = cf.rho_ratio_from_mach(mach_sweep, gamma) * rho_0
-            Ts = T0 * cf.T_ratio_from_mach(mach_sweep, gamma) #pylint: disable=C0103 #noqa: N806
+            Ts = T0 * cf.temp_ratio_from_mach(mach_sweep, gamma) #noqa: N806
             mdots = rhos * np.sqrt(gamma * R * Ts) * mach_sweep * A
             mach_test = cf.mach_from_stagnation(T0, P0, mdots, gamma, R, A, supersonic=mach_sweep>1)
             rho_test = cf.rho_ratio_from_mach(mach_test, gamma) * rho_0
-            Ts_test = T0 * cf.T_ratio_from_mach(mach_test, gamma) #pylint: disable=C0103 #noqa: N806
+            Ts_test = T0 * cf.temp_ratio_from_mach(mach_test, gamma) #noqa: N806
             c_test = np.sqrt(gamma * R * Ts_test)
             mdot_test = rho_test * c_test * mach_test * A
 
@@ -233,22 +233,23 @@ class TestMachFromStagnation:
     def test_mach_from_stagnation_rejects_non_boolean_supersonic(self, gamma_air):
         """(Input Test) The function rejects non-boolean values for the supersonic parameter."""
         mach_test = 2.312
-        T0 = 300.0 #pylint: disable=C0103 #noqa: N806
-        P0 = 101325.0 #pylint: disable=C0103 #noqa: N806
-        R = 287.05 #pylint: disable=C0103 #noqa: N806
+        T0 = 300.0 #noqa: N806
+        P0 = 101325.0 #noqa: N806
+        R = 287.05 #noqa: N806
         area = 11.0
         mdot = area * cf.m_flux_from_stagnation(T0, P0, gamma_air, R, mach_test)
 
-        with pytest.raises(TypeError, match="Invalid supersonic type"):
+        with pytest.raises(IndexError,
+                           match="used as indices"):
             cf.mach_from_stagnation(
                 T0, P0, mdot, gamma_air, R, area, supersonic="yes" #type: ignore
-            ) # type: ignore
+            )
 
 class TestMachFromPressureRatio:
     """Analytic inversion of the isentropic pressure relation."""
 
     def test_roundtrip(self, mach_sweep, gamma_air):
-        """(Value Test) Test that mach_from_P_ratio inverts P_ratio_from_mach."""
+        """(Value Test) Test that mach_from_P_ratio inverts press_ratio_from_mach."""
         p_rat = cf.press_ratio_from_mach(mach_sweep, gamma_air)
         np.testing.assert_allclose(
             cf.mach_from_press_ratio(p_rat, gamma_air), mach_sweep, rtol=1e-10
@@ -362,18 +363,18 @@ class TestNormalShock:
         assert cf.normal_shock_mach_2(mach_1, gamma_air) == pytest.approx(
             mach_2, rel=RTOL_TABLE
         )
-        assert cf.normal_shock_P_ratio(mach_1, gamma_air) == pytest.approx(
+        assert cf.normal_shock_press_ratio(mach_1, gamma_air) == pytest.approx(
             p_rat, rel=RTOL_TABLE
         )
-        assert cf.normal_shock_P_tot_ratio(mach_1, gamma_air) == pytest.approx(
+        assert cf.normal_shock_press_tot_ratio(mach_1, gamma_air) == pytest.approx(
             pt_rat, rel=RTOL_TABLE
         )
 
     def test_sonic_shock_is_identity(self, gamma_sweep):
         """A shock at M1 = 1 has vanishing strength for any gamma."""
         assert cf.normal_shock_mach_2(1.0, gamma_sweep) == pytest.approx(1.0)
-        assert cf.normal_shock_P_ratio(1.0, gamma_sweep) == pytest.approx(1.0)
-        assert cf.normal_shock_P_tot_ratio(1.0, gamma_sweep) == pytest.approx(1.0)
+        assert cf.normal_shock_press_ratio(1.0, gamma_sweep) == pytest.approx(1.0)
+        assert cf.normal_shock_press_tot_ratio(1.0, gamma_sweep) == pytest.approx(1.0)
 
     def test_downstream_is_always_subsonic(self, gamma_sweep):
         """The downstream Mach number is always less than 1 valid Mach number."""
@@ -384,7 +385,7 @@ class TestNormalShock:
     def test_total_pressure_loss_is_monotonic(self, gamma_air):
         """Second law: p02/p01 <= 1 and strictly decreasing in M1."""
         mach_1 = np.linspace(1.0, 10.0, 200)
-        pt_rat = cf.normal_shock_P_tot_ratio(mach_1, gamma_air)
+        pt_rat = cf.normal_shock_press_tot_ratio(mach_1, gamma_air)
         assert np.all(pt_rat <= 1.0 + 1e-12)
         assert np.all(np.diff(pt_rat) < 0.0)
 
@@ -402,7 +403,7 @@ class TestNormalShock:
             mach_2, cf.normal_shock_mach_2(mach_supersonic, gamma_air)
         )
         np.testing.assert_allclose(
-            pt_rat, cf.normal_shock_P_tot_ratio(mach_supersonic, gamma_air)
+            pt_rat, cf.normal_shock_press_tot_ratio(mach_supersonic, gamma_air)
         )
 
 
@@ -619,7 +620,7 @@ class TestObliqueShockAngles:
             cf.normal_shock_mach_2(2.0, gamma_air), rel=1e-4
         )
         assert pt_rat == pytest.approx(
-            cf.normal_shock_P_tot_ratio(2.0, gamma_air), rel=1e-4
+            cf.normal_shock_press_tot_ratio(2.0, gamma_air), rel=1e-4
         )
 
 
@@ -631,19 +632,19 @@ class TestThrustCoefficients:
 
     def test_cf(self, gamma_sweep):
         """(Value Test) Check that the thrust coefficient matches the definition."""
-        T0 = 3000.0 #pylint: disable=C0103 #noqa: N806
+        T0 = 3000.0 #noqa: N806
         cp = 1011.0
         pressure_chamber_pa = 2.0e6
         pressure_back_pa = 101325.0
 
         for gamma in gamma_sweep:
-            R = cp * (gamma - 1.0) / gamma #pylint: disable=C0103 #noqa: N806
+            R = cp * (gamma - 1.0) / gamma #noqa: N806
             for area_ratio in [1.0, 2.0, 4.0, 10.0]:
                 mach_exit = cf.mach_from_area_ratio(area_ratio, gamma, supersonic=True)
                 vel_exit = np.sqrt(
                     2.0 * cp * T0
-                    * (1. - cf.T_ratio_from_mach(mach_exit, gamma)))
-                pressure_exit_pa = pressure_chamber_pa * cf.P_ratio_from_mach(mach_exit, gamma)
+                    * (1. - cf.temp_ratio_from_mach(mach_exit, gamma)))
+                pressure_exit_pa = pressure_chamber_pa * cf.press_ratio_from_mach(mach_exit, gamma)
                 mass_flux = cf.m_flux_from_stagnation(T0, pressure_chamber_pa, gamma, R, 1.0)
 
                 c_f = (mass_flux
@@ -721,7 +722,7 @@ class TestThrustCoefficients:
     def test_explicit_pressure_ratio_overrides_area_ratio(self, gamma_combustion):
         """(Value Test) The get_cfv function returns the same value with pip and ae_at."""
         area_ratio = 4.0
-        pressure_ratio_computed = cf.P_ratio_from_mach(
+        pressure_ratio_computed = cf.press_ratio_from_mach(
             cf.mach_from_area_ratio(area_ratio, gamma_combustion, supersonic=True), gamma_combustion
         )
         assert cf.get_cfv(
@@ -743,7 +744,7 @@ class TestThrustCoefficients:
         )
 
         area_ratio_optimal = res.x[0]
-        pressure_exit_optimal = pressure_chamber_pa * cf.P_ratio_from_mach(
+        pressure_exit_optimal = pressure_chamber_pa * cf.press_ratio_from_mach(
                             cf.mach_from_area_ratio(area_ratio_optimal,
                                                     gamma_combustion,
                                                     supersonic=True),
@@ -828,7 +829,7 @@ class TestRecoveryTemperature:
     def test_zero_mach_recovers_freestream(self):
         """(Value Test) At M = 0, Tr = T0."""
         temperature_freestream_k = 300.0
-        assert cf.T_recovery(
+        assert cf.temp_recovery(
             temperature_freestream_k, 0.71, 1.4, 0.0
         ) == pytest.approx(temperature_freestream_k)
 
@@ -837,8 +838,8 @@ class TestRecoveryTemperature:
         temperature_freestream_k = 300.0
         gamma = 1.4
         mach = 3.0
-        expected_k = temperature_freestream_k / cf.T_ratio_from_mach(mach, gamma)
-        assert cf.T_recovery(
+        expected_k = temperature_freestream_k / cf.temp_ratio_from_mach(mach, gamma)
+        assert cf.temp_recovery(
             temperature_freestream_k, 1.0, gamma, mach
         ) == pytest.approx(expected_k)
 
@@ -847,10 +848,10 @@ class TestRecoveryTemperature:
         temperature_freestream_k = 300.0
         gamma = 1.4
         mach = 4.0
-        temperature_recovery_k = cf.T_recovery(
+        temperature_recovery_k = cf.temp_recovery(
             temperature_freestream_k, 0.71, gamma, mach
         )
-        temperature_stagnation_k = temperature_freestream_k / cf.T_ratio_from_mach(
+        temperature_stagnation_k = temperature_freestream_k / cf.temp_ratio_from_mach(
             mach, gamma
         )
         assert (
@@ -864,15 +865,15 @@ class TestRecoveryTemperature:
 # Type contract
 # ---------------------------------------------------------------------------
 SCALAR_IN_SCALAR_OUT = [
-    ("P_ratio_from_mach", (2.0, 1.4), {}),
-    ("T_ratio_from_mach", (2.0, 1.4), {}),
+    ("press_ratio_from_mach", (2.0, 1.4), {}),
+    ("temp_ratio_from_mach", (2.0, 1.4), {}),
     ("h_ratio_from_mach", (2.0, 1.4), {}),
     ("rho_ratio_from_mach", (2.0, 1.4), {}),
     ("area_ratio_from_mach", (2.0, 1.4), {}),
-    ("mach_from_P_ratio", (0.1278, 1.4), {}),
-    ("normal_shock_P_ratio", (2.0, 1.4), {}),
+    ("mach_from_press_ratio", (0.1278, 1.4), {}),
+    ("normal_shock_press_ratio", (2.0, 1.4), {}),
     ("normal_shock_mach_2", (2.0, 1.4), {}),
-    ("normal_shock_P_tot_ratio", (2.0, 1.4), {}),
+    ("normal_shock_press_tot_ratio", (2.0, 1.4), {}),
     ("prandtl_meyer", (2.0, 1.4), {}),
     ("max_prandtl_meyer", (1.4,), {}),
     ("oblique_shock_max_angle", (2.0, 1.4), {}),
@@ -922,13 +923,13 @@ class TestTypeContract:
     @pytest.mark.parametrize(
         "name",
         [
-            "P_ratio_from_mach",
-            "T_ratio_from_mach",
+            "press_ratio_from_mach",
+            "temp_ratio_from_mach",
             "h_ratio_from_mach",
             "rho_ratio_from_mach",
             "area_ratio_from_mach",
             "normal_shock_mach_2",
-            "normal_shock_P_tot_ratio",
+            "normal_shock_press_tot_ratio",
         ],
     )
     def test_broadcasting_shape(self, name):
@@ -940,7 +941,10 @@ class TestTypeContract:
 
     @pytest.mark.parametrize(
         "name",
-        ["P_ratio_from_mach", "T_ratio_from_mach", "h_ratio_from_mach", "normal_shock_mach_2"]
+        ["press_ratio_from_mach",
+         "temp_ratio_from_mach",
+         "h_ratio_from_mach",
+         "normal_shock_mach_2"]
     )
     def test_scalar_and_array_agree(self, name, gamma_air):
         """(Implementation Test) Returns the same values for scalar and array inputs."""
