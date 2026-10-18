@@ -1,6 +1,13 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.1.0
+Connor McGuire
+### 2026-10-18
+Corrected some issues with Bartz function calculations (Unit errors).
+Updated thermals to be able to return the temperature distribution for each leaf layer instead of just the top-level layers.
+Steady State Temperature Distribution was corrected for sign errors.
+
 ## 0.0.A
 Connor McGuire
 ### 2026-10-17
