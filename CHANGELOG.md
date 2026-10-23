@@ -1,6 +1,11 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.1.1
+Connor McGuire
+### 2026-10-23
+Corrected further Bartz function unit errors.
+
 ## 0.1.0
 Connor McGuire
 ### 2026-10-18

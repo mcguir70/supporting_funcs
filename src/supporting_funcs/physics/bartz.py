@@ -736,6 +736,7 @@ def calc_mu_coeff_from_cea(cea_obj: PropellentMixture, n_pts: int = 100) -> Simp
     mu_coeff: SimpleNamespace
         A SimpleNamespace containing the coefficients 'a' and 'b' for the viscosity curve fit.
     """
+    raise NotImplementedError("This function may have errors, and thus is marked as invalid.")
     cea_obj = deepcopy(cea_obj)
     p_c = cea_obj.solution.chamber_pressure
 

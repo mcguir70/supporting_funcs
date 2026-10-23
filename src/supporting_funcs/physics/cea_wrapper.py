@@ -1,5 +1,8 @@
 """A collection of classes and functions to wrap the cea2022 python API in a SI/user-friendly way.
 
+Source Documentation
+https://nasa.github.io/cea/interfaces/python_api.html#cea.RocketSolution
+
 Classes
 -------
 Propellent:
@@ -15,7 +18,6 @@ output_solution:
     Format the CEA solution into a human-readable string (Match the original/website CEA output).
 """
 #TODO: Add Frozen ability
-#TODO: Add unchoked ability?
 from collections.abc import Sequence
 from typing import overload
 from warnings import warn
@@ -479,8 +481,13 @@ class PropellentMixture:
 
         return self.solve(p_c=p_c, **kwargs)
 
-    def get_area_specific_vac_thrust(self) -> float:
+    def get_area_specific_vac_thrust(self, eta_isp: float = 1.0) -> float:
         """Get the vacuum thrust for the given throat area.
+
+        Parameters
+        ----------
+        eta_isp: [1], default 1.0
+            The efficiency of the specific impulse. A value of 1.0 means no losses.
 
         Returns
         -------
@@ -489,7 +496,7 @@ class PropellentMixture:
         """
         mdot = self.solution.gas_velocity[1] * self.solution.density[1]
         isp_v = self.solution.isp_vacuum[-1]
-        return mdot * isp_v * csp.g # kg/s * s * N/kg = N
+        return mdot * isp_v * csp.g * eta_isp
 
 class CEAOutput:
     """A class to format the output of a CEA solution into SI base units, etc."""
@@ -582,25 +589,25 @@ class CEAOutput:
 
     @property
     def enthalpy(self) -> FloatArray:
-        """Get the static enthalpy for the solution [J]."""
+        """Get the static enthalpy for the solution [J/kg]."""
         return self.raw_solution.enthalpy * csp.kilo
     h = enthalpy # alias
 
     @property
     def internal_energy(self) -> FloatArray:
-        """Get the static internal energy for the solution [J]."""
+        """Get the static internal energy for the solution [J/kg]."""
         return self.raw_solution.energy * csp.kilo
     u = internal_energy # alias
 
     @property
     def gibbs_energy(self) -> FloatArray:
-        """Get the static Gibbs energy for the solution [J]."""
+        """Get the static Gibbs energy for the solution [J/kg]."""
         return self.raw_solution.gibbs_energy * csp.kilo
     g = gibbs_energy # alias
 
     @property
     def entropy(self) -> FloatArray:
-        """Get the static entropy for the solution [J/K]."""
+        """Get the static entropy for the solution [J/kg/K]."""
         return self.raw_solution.entropy * csp.kilo
     s = entropy # alias
 
@@ -623,13 +630,19 @@ class CEAOutput:
     @property
     def specific_heat_capacity_constant_pressure(self) -> FloatArray:
         """Get the constant pressure specific heat for the solution [J/kg/K]."""
-        return self.raw_solution.cp_eq * csp.kilo
+        if self.is_frozen:
+            return self.raw_solution.cp_fr * csp.kilo
+        else:
+            return self.raw_solution.cp_eq * csp.kilo
     cp = specific_heat_capacity_constant_pressure # alias
 
     @property
     def specific_heat_capacity_constant_volume(self) -> FloatArray:
         """Get the constant volume specific heat for the solution [J/kg/K]."""
-        return self.raw_solution.cv_eq * csp.kilo
+        if self.is_frozen:
+            return self.raw_solution.cv_fr * csp.kilo
+        else:
+            return self.raw_solution.cv_eq * csp.kilo
     cv = specific_heat_capacity_constant_volume # alias
 
     @property
@@ -668,19 +681,19 @@ class CEAOutput:
     @property
     def viscosity(self) -> FloatArray:
         """Get the viscosity for the solution [Pa*s]."""
-        return self.raw_solution.viscosity * csp.milli # Pa*s
+        return self.raw_solution.viscosity * 1e-4 # Pa*s from millipoise
     mu = viscosity # alias
 
     @property
     def conductivity_fr(self) -> FloatArray:
         """Get the conductivity for the solution [W/m/K]."""
-        return self.raw_solution.conductivity_fr
+        return self.raw_solution.conductivity_fr * 0.1 # W/m/K from mW/cm/K
     k_fr = conductivity_fr # alias
 
     @property
     def conductivity_eq(self) -> FloatArray:
         """Get the conductivity for the solution [W/m/K]."""
-        return self.raw_solution.conductivity_eq
+        return self.raw_solution.conductivity_eq * 0.1 # W/m/K from mW/cm/K
     k_eq = conductivity_eq # alias
 
     @property
@@ -730,7 +743,7 @@ class CEAOutput:
 
         Returns
         -------
-        isp_vacuum: [m/s]
+        isp_vacuum: [s]
             Vacuum specific impulse for the given expansion ratio
         """
         if ae_at is None:
@@ -752,7 +765,7 @@ class CEAOutput:
 
         Returns
         -------
-        isp_ideal: [m/s]
+        isp_ideal: [s]
             Ideal Expansion specific impulse for the given expansion ratio
         """
         if ae_at is None:
@@ -884,7 +897,7 @@ class CEAOutput:
 
         Returns
         -------
-        g: [kJ/kg]
+        g: [J/kg]
             Static Gibbs energy for the given expansion ratio
         """
         if ae_at is None:
@@ -906,7 +919,7 @@ class CEAOutput:
 
         Returns
         -------
-        s: [kJ/kg-K]
+        s: [J/kg-K]
             Static entropy for the given expansion ratio
         """
         if ae_at is None:
