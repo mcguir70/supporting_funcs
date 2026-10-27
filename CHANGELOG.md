@@ -1,6 +1,13 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.1.2
+Connor McGuire
+### 2026-10-26
+Corrected cea_wrapper for how many dimensions to use when ndarrays are passed in. This was causing a bug when passing in 1D arrays to the CEA solver, where 2D arrays were generated.
+Added steady state functions to fluids.py
+Added some testing for fluids.py in test_fluids.py
+
 ## 0.1.1
 Connor McGuire
 ### 2026-10-23

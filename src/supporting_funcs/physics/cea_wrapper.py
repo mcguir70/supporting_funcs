@@ -17,7 +17,7 @@ Functions
 output_solution:
     Format the CEA solution into a human-readable string (Match the original/website CEA output).
 """
-#TODO: Add Frozen ability
+# TODO: Add Frozen ability
 from collections.abc import Sequence
 from typing import overload
 from warnings import warn
@@ -419,7 +419,7 @@ class PropellentMixture:
                 key = 'supar'
             else:
                 key = 'subar'
-            kwargs[key] = np.array([ae_at] if isinstance(ae_at, (list, np.ndarray)) else [ae_at])
+            kwargs[key] = np.array(ae_at if isinstance(ae_at, (list, np.ndarray)) else [ae_at])
 
         if subar is not None:
             old_val: FloatOrArray = kwargs.get('subar', [])
@@ -481,7 +481,7 @@ class PropellentMixture:
 
         return self.solve(p_c=p_c, **kwargs)
 
-    def get_area_specific_vac_thrust(self, eta_isp: float = 1.0) -> float:
+    def get_area_specific_vac_thrust(self, eta_isp: float = 1.0) -> FloatOrArray:
         """Get the vacuum thrust for the given throat area.
 
         Parameters
@@ -495,7 +495,7 @@ class PropellentMixture:
             Thrust for the given throat area
         """
         mdot = self.solution.gas_velocity[1] * self.solution.density[1]
-        isp_v = self.solution.isp_vacuum[-1]
+        isp_v = self.solution.isp_vacuum[2:] # Skip the chamber and throat
         return mdot * isp_v * csp.g * eta_isp
 
 class CEAOutput:
