@@ -8,8 +8,6 @@ package.  If that import fails, the src-layout packaging is wrong -- do not
 import numpy as np
 import pytest
 
-from supporting_funcs.physics.units import Q_
-
 # Relative tolerance for comparison against published table values.
 # NACA TR-1135 tables are given to 5 significant figures, so 1e-5 is the
 # tightest meaningful bound.
