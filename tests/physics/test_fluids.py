@@ -5,6 +5,8 @@
 # rho_ullage * m_ullage + rho_prop * m_prop = V_tot
 import numpy as np
 import pytest
+from CoolProp import constants as CPc
+from CoolProp.CoolProp import AbstractState
 from tests.physics.conftest import RTOL_SOLVER
 
 from supporting_funcs.physics import fluids
@@ -34,6 +36,11 @@ def mdot_qty():
                         2.0,
                         1.17132404e5,
                         1.85903201e7], dtype=np.float64), 'kg/s')
+
+@pytest.fixture(scope="session")
+def coolprop_gases():
+    """List of fluids available in CoolProp for testing."""
+    return ['Nitrogen', 'Oxygen', 'CarbonDioxide', 'Methane', 'Helium']
 
 class TestSteadyState:
     """Test suite for the steady state functions in supporting_funcs.physics.fluids."""
@@ -68,3 +75,69 @@ class TestSteadyState:
                                             mdot=mdot_qty.m_as('kg/s'))
 
         np.testing.assert_allclose(round_trip_dp, dp_qty.m_as('Pa'), rtol=RTOL_SOLVER)
+
+    def test_size_copv_adiabatic(self, coolprop_gases, rng_seed):
+        """Check that the size_copv_adiabatic function obeys the boundary conditions."""
+        rng_obj = np.random.default_rng(seed=rng_seed)
+        starting_temp = 293.15  # K
+        tank_fill_pressure = 101325  # Pa
+        ullage_perc_vol = 0.1  # 10% ullage
+        copv_start_pressure = rng_obj.uniform(tank_fill_pressure, 100e6)
+        p_tank = rng_obj.uniform(1e5*0.9, copv_start_pressure*0.9)
+        liquid_volume_start = 10 # m^3
+
+        for fluid in coolprop_gases:
+            copv_obj = fluids.size_copv_adiabatic(p1_copv = copv_start_pressure,
+                                    p2_copv = p_tank * 1.2,
+                                    temp_start = starting_temp,
+                                    p_tank_start = tank_fill_pressure,
+                                    p_tank = p_tank,
+                                    liquid_volume = liquid_volume_start,
+                                    ullage_volume_start = ullage_perc_vol * liquid_volume_start,
+                                    fluid = fluid)
+
+            state = AbstractState('HEOS', fluid)
+            state.update(CPc.PT_INPUTS, copv_start_pressure, starting_temp)
+            s_copv_start = state.smass()
+            rho_copv_start = state.rhomass()
+            u_copv_start = state.umass()
+
+            state.update(CPc.PT_INPUTS, tank_fill_pressure, starting_temp)
+            rho_ullage_start = state.rhomass()
+            u_ullage_start = state.umass()
+            s_ullage_start = state.smass()
+
+            mass_ullage_start = rho_ullage_start * ullage_perc_vol * liquid_volume_start
+            mass_copv_start = rho_copv_start * copv_obj.copv_volume
+
+            state.update(CPc.PT_INPUTS, p_tank, copv_obj.temp_ullage_end)
+            rho_ullage_end = state.rhomass()
+            u_ullage_end = state.umass()
+            s_ullage_end = state.smass()
+            mass_ullage_end = rho_ullage_end * (1 + ullage_perc_vol) * liquid_volume_start
+
+            state.update(CPc.PT_INPUTS, p_tank * 1.2, copv_obj.temp_copv_end)
+            rho_copv_end = state.rhomass()
+            u_copv_end = state.umass()
+            s_copv_end = state.smass()
+            mass_copv_end = rho_copv_end * copv_obj.copv_volume
+            boundary_work = p_tank * liquid_volume_start
+
+            U_err_ox = ((mass_ullage_start * u_ullage_start + mass_copv_start * u_copv_start  # noqa: N806
+                        - (mass_ullage_end * u_ullage_end + mass_copv_end * u_copv_end + boundary_work)) # noqa: E501
+                    / (mass_ullage_start * u_ullage_start + mass_copv_start * u_copv_start))
+            m_err_ox = ((mass_ullage_start + mass_copv_start - (mass_ullage_end + mass_copv_end))  # noqa: E501
+                        / (mass_ullage_start + mass_copv_start))
+
+            s_copv_err_ox = (s_copv_start - s_copv_end) / s_copv_start
+            S_ox_final = mass_copv_end * s_copv_end + mass_ullage_end * s_ullage_end  # noqa: N806
+            S_ox_initial = mass_copv_start * s_copv_start + mass_ullage_start * s_ullage_start  # noqa: N806
+            S_diff = (S_ox_final - S_ox_initial) / S_ox_initial  # noqa: N806
+
+            assert 0 == pytest.approx(m_err_ox, rel=RTOL_SOLVER, abs=1e-7), (
+                "Mass not conserved during ullage calculation for oxidizer.")
+            assert 0 == pytest.approx(U_err_ox, rel=RTOL_SOLVER, abs=1e-7), (
+                "Energy not conserved during ullage calculation for oxidizer.")
+            assert 0 == pytest.approx(s_copv_err_ox, rel=RTOL_SOLVER, abs=1e-7), (
+                "Entropy not conserved during ullage calculation for oxidizer.")
+            assert S_diff > 0, "Entropy decreased during ullage calculation for oxidizer."

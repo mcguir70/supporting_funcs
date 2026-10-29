@@ -56,3 +56,8 @@ def mach_subsonic() -> np.ndarray:
 def mach_sweep() -> np.ndarray:
     """Range of physically plausible Mach numbers, [1]."""
     return np.array([0.05, 0.2, 0.5, 0.8, 0.95, 1.05, 1.5, 2.0, 3.0, 5.0, 8.0], dtype=np.float64)
+
+@pytest.fixture(scope="session")
+def rng_seed() -> int:
+    """Seed for random number generator."""
+    return 108460707

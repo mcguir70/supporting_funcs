@@ -1,6 +1,11 @@
 # Changelog
 Note for the 0.X.X branch, semantic versioning is not followed.
 
+## 0.1.3
+Connor McGuire
+### 2026-10-27
+Changed the get_nozzle_curve function to include the setting of the chamber length
+
 ## 0.1.2
 Connor McGuire
 ### 2026-10-26

@@ -13,7 +13,12 @@ import numpy as np
 from scipy import constants as csp
 from scipy.optimize import root
 
-from supporting_funcs.coding.type_hints import BoolArray, FloatArray, MatPlotLibFigAxes
+from supporting_funcs.coding.type_hints import (
+    BoolArray,
+    FloatArray,
+    MatPlotLibFigAxes,
+    OneDFloatArray,
+)
 from supporting_funcs.pretty.matplotlib_tools import format_plot, plot_circle
 
 
@@ -25,6 +30,8 @@ def get_nozzle_curve(l_super: float,
                      r_exit: float,
                      theta_n: float,
                      theta_e: float,
+                     l_star: float,
+                     r_chamber: float,
                      *,
                      n_pts: int = 10_000) -> FloatArray:
     """Calculate the radius of the nozzle curve at each x value.
@@ -47,10 +54,14 @@ def get_nozzle_curve(l_super: float,
         Radius of the diverging curve of the nozzle (near the throat).
     r_exit: [m]
         Radius of the nozzle at the exit.
+    r_chamber: [m]
+            Radius of the nozzle at the chamber.
     theta_n: [rad]
         Angle of the nozzle at the start of the diverging curve.
     theta_e: [rad]
         Angle of the nozzle at the exit.
+    l_star: [m]
+        Characteristic length of the nozzle.
     n_pts: int, default=10_000
         Number of points to use for computation.
 
@@ -169,7 +180,12 @@ def get_nozzle_curve(l_super: float,
         return_arr[invalid_t] = np.array([np.nan, np.nan])
         return return_arr
 
-    x = np.linspace(-l_sub, l_super, n_pts)
+    area_chamber = np.pi * r_chamber ** 2
+    area_throat = np.pi * r_throat ** 2
+    l_chamber = l_star * area_throat / area_chamber
+
+    x = np.linspace(-l_sub, l_super, n_pts-1)
+    x = np.insert(x, 0, -l_sub - l_chamber)
     r = np.full_like(x, np.nan)
 
     theta_start = 45 * csp.degree
@@ -179,12 +195,6 @@ def get_nozzle_curve(l_super: float,
     conv_join[0] = np.sin(- theta_start) * r_conv_curve + conv_center[0]
     conv_join[1] =-np.cos(- theta_start) * r_conv_curve + conv_center[1]
 
-    def r_conv_circle_func(x: float | np.ndarray) -> float | np.ndarray:
-        return -np.sqrt(r_conv_curve ** 2 - (x - conv_center[0])**2) + conv_center[1]
-
-    def r_conv_curve_func(x: float | np.ndarray) -> float | np.ndarray:
-        return (2 / (1 + np.exp(2 * (x + x_offset))) + y_offset)
-
     @overload
     def r_div_circle_func(x: float) -> float: ...
     @overload
@@ -192,28 +202,68 @@ def get_nozzle_curve(l_super: float,
     def r_div_circle_func(x: float | np.ndarray) -> float | np.ndarray:
         return -np.sqrt(r_div_curve ** 2 - (x - 0)**2) + (r_throat + r_div_curve)
 
-    def get_conv_curve_params(theta_start: float, conv_join_loc: np.ndarray) -> tuple[float, float]:
+    def _get_conv_curve_params(chamb_end_loc: np.ndarray) -> float:
         """Get the parameters for the converging curve of the nozzle.
+
+        Cuves via two equal diameter circles, attached with a tangent line.
 
         Parameters
         ----------
-        theta_start : [rad]
-            angle of the converging curve at the start
-        conv_join_loc: [m, m]
-            array containing the x and r values of the converging circle join point
+        r_conv_curve : [m]
+            radius of the converging curve
+        chamb_end_loc : [m, m]
+            array containing the x and r values of the chamber end point
+
+        Returns
+        -------
+        theta : [rad]
+            angle of the tangent line connecting the two circles
         """
-        # R(x) = (2 / (1 + np.exp(2 * (x + X_Offset))) + Y_Offset
-        # dRdx = - (4 * np.exp(2 * (x + X_Offset))) / ((1 + np.exp(2 * (x + X_Offset))) ** 2)
-        # dRdx |_(x = Conv_join[0]) = -np.tan(thetaStart)
-        # Solving for X_Offset and Y_Offset gives:
-        x_c = conv_join_loc[0]
-        y_c = conv_join_loc[1]
-        k = np.tan(theta_start) / 4
-        u = ((1 - 2*k) + np.sqrt(1 - 4 * k)) / (2 * k)
-        x_offset = (np.log(u) - 2* x_c) / 2
-        y_offset = y_c - (2 / (1 + u))
-        return x_offset, y_offset
-    x_offset, y_offset = get_conv_curve_params(theta_start = theta_start, conv_join_loc = conv_join)
+        d_x = -chamb_end_loc[0] # Throat is at x = 0
+        d_r = chamb_end_loc[1] - r_throat
+
+        l_tan = np.sqrt(d_x**2 + d_r**2 - 4 * r_conv_curve * d_r)
+        theta = 2 * np.arctan2(d_r, (d_x + l_tan))
+
+        return theta
+
+    def r_conv_curve_func(x: OneDFloatArray) -> OneDFloatArray:
+        """Compute the radius of the converging curve at given x coordinates.
+
+        Parameters
+        ----------
+        x : float or np.ndarray
+            x coordinate(s) at which to compute the radius
+
+        Returns
+        -------
+        float or np.ndarray
+            radius of the converging curve at the given x coordinate(s)
+        """
+        x_arr = np.asarray(x, dtype=float)
+        r = np.empty_like(x, dtype=float)
+        theta = _get_conv_curve_params(chamb_end_loc=np.array([-l_sub, r_chamber]))
+
+        x_ch = -l_sub
+        r_cc = r_conv_curve
+        sin_t, cos_t, tan_t = np.sin(theta), np.cos(theta), np.tan(theta)
+
+        if np.any((x_arr < x_ch) | (x_arr > 0.)):
+            raise ValueError("x outside converging section.")
+
+        x_1 =  x_ch + r_cc * sin_t # end of chamber arc
+        x_2 = -r_cc * sin_t   # start of throat arc
+
+        r_arc_1 = r_chamber - r_cc + np.sqrt(np.clip(r_cc**2 - (x_arr - x_ch)**2, 0.0, None))
+        r_line = r_chamber - r_cc * (1.0 - cos_t) - (x_arr - x_1) * tan_t
+        r_arc_2 = r_throat + r_cc - np.sqrt(
+            np.clip(r_cc**2 - (0. - x_arr)**2, 0.0, None)
+        )
+
+        r = np.select([x_arr <= x_1, x_arr < x_2],
+                      [r_arc_1, r_line],
+                      default=r_arc_2)
+        return r
 
     x_parabola_start: float = r_div_curve * np.sin(theta_n)
     r_parabola_start: float = r_div_circle_func(x_parabola_start)
@@ -227,28 +277,30 @@ def get_nozzle_curve(l_super: float,
     diverg_arr = _compute_diverging_curve(curve_params, t=np.linspace(curve_params[xE.t_n],
                                                                       curve_params[xE.t_e], n_pts))
 
-    x_mask_conv_r_eqn = (x >= -l_sub) * (x < conv_join[0])
-    x_mask_conv_circ = (x >= conv_join[0]) * (x < 0)
+    x_mask_conv_r_eqn = (x >= -l_sub) * (x < 0)
     x_mask_div_circ = (x >= 0) * (x < x_parabola_start)
     x_mask_div_parabola = (x >= x_parabola_start) * (x <= l_super)
 
-    r[x_mask_conv_r_eqn] = r_conv_curve_func(x[x_mask_conv_r_eqn])
-    r[x_mask_conv_circ] = r_conv_circle_func(x[x_mask_conv_circ])
+    r[x < -l_sub] = r_chamber
+    r[x_mask_conv_r_eqn] =  r_conv_curve_func(x[x_mask_conv_r_eqn])
     r[x_mask_div_circ] = r_div_circle_func(x[x_mask_div_circ])
     r[x_mask_div_parabola] = np.interp(x[x_mask_div_parabola], diverg_arr[:, 0], diverg_arr[:, 1])
 
     return np.c_[x, r]
 
-def plot_nozzle_curve(self,
-                            x: FloatArray,
-                            r: FloatArray,
-                            conv_join: FloatArray,
-                            x_n: float,
-                            x_mask_conv_r_eqn: BoolArray,
-                            x_mask_conv_circ: BoolArray,
-                            x_mask_div_circ: BoolArray,
-                            x_mask_div_parabola: BoolArray,
-                            ) -> MatPlotLibFigAxes:
+def plot_nozzle_curve(x: FloatArray,
+                    r: FloatArray,
+                    l_sub: float | None = None,
+                    l_super: float | None = None,
+                    conv_join: FloatArray | None = None,
+                    r_conv: float | None = None,
+                    r_div: float | None = None,
+                    x_n: float | None = None,
+                    x_mask_conv_r_eqn: BoolArray | None = None,
+                    x_mask_conv_circ: BoolArray | None = None,
+                    x_mask_div_circ: BoolArray | None = None,
+                    x_mask_div_parabola: BoolArray | None = None,
+                    ) -> MatPlotLibFigAxes:
     """Plot the nozzle curve for debugging purposes.
 
     Parameters
@@ -268,38 +320,54 @@ def plot_nozzle_curve(self,
     ax_dbg[0] = fig_dbg.add_subplot(gs[0:3, 0])
     ax_dbg[1] = fig_dbg.add_subplot(gs[3, 0], sharex=ax_dbg[0])
 
-    ax_dbg[0].axvline(-self.L_sub, color="#00B3FF", linestyle="--", label="Subsonic Start")
-    ax_dbg[0].axvline(conv_join[0], color="k", linestyle="--", label="Conv Join")
+    if conv_join is not None:
+        ax_dbg[0].axvline(conv_join[0], color="k", linestyle="--", label="Conv Join")
     ax_dbg[0].axvline(0, color="r", linestyle="--", label="Throat")
-    ax_dbg[0].axvline(x_n, color="b", linestyle="--", label="Div Circle Join")
-    ax_dbg[0].axvline(self.L_super, color="g", linestyle="--", label="Nozzle End")
+    if x_n is not None:
+        ax_dbg[0].axvline(x_n, color="b", linestyle="--", label="Div Circle Join")
+    if l_sub is not None:
+        ax_dbg[0].axvline(-l_sub, color="#00B3FF", linestyle="--", label="Subsonic Start")
+    if l_super is not None:
+        ax_dbg[0].axvline(l_super, color="g", linestyle="--", label="Nozzle End")
     ax_dbg[0].set_aspect("equal", adjustable="datalim")
-    ax_dbg[0].set_ylim(0, self.r_exit * 1.2)
+    ax_dbg[0].set_ylim(0, r[-1] * 1.2)
     ax_dbg[0].set_ylabel("r (inches)")
 
-    ax_dbg[0].plot(x[x_mask_conv_r_eqn], r[x_mask_conv_r_eqn],
-                   label="Conv Solver Func", color="k")
-    ax_dbg[0].plot(x[x_mask_conv_circ], r[x_mask_conv_circ],
-                   label="Conv Circle Func", color="r")
-    plot_circle(ax_dbg[0], center=(0, (self.r_th + self.R_conv)), radius=self.R_conv,
-                color="#FF880088", linestyle="--", label="Conv Circle")
-    ax_dbg[0].plot(x[x_mask_div_circ], r[x_mask_div_circ],
-                   label="Div Circle Func", color="b")
-    plot_circle(ax_dbg[0], center=(0, (self.r_th + self.R_div)), radius=self.R_div,
-                color="#0088FF88", linestyle="--", label="Div Circle")
-    ax_dbg[0].plot(x[x_mask_div_parabola], r[x_mask_div_parabola],
-                   label="Div Parabola Func", color="g")
+    plot_sections = all(x_mask is not None
+                        for x_mask in
+                        [x_mask_conv_r_eqn, x_mask_conv_circ, x_mask_div_circ, x_mask_div_parabola])
+    if not plot_sections:
+        ax_dbg[0].plot(x, r, label="Nozzle Curve", color="k")
+
+    if x_mask_conv_r_eqn is not None:
+        ax_dbg[0].plot(x[x_mask_conv_r_eqn], r[x_mask_conv_r_eqn],
+                    label="Conv Solver Func", color="k")
+    if x_mask_conv_circ is not None:
+        ax_dbg[0].plot(x[x_mask_conv_circ], r[x_mask_conv_circ],
+                       label="Conv Circle Func", color="r")
+    if r_conv is not None:
+        plot_circle(ax_dbg[0], center=(0, (r[0] + r_conv)), radius=r_conv,
+                    color="#FF880088", linestyle="--", label="Conv Circle")
+    if x_mask_div_circ is not None:
+        ax_dbg[0].plot(x[x_mask_div_circ], r[x_mask_div_circ],
+                    label="Div Circle Func", color="b")
+    if r_div is not None:
+        plot_circle(ax_dbg[0], center=(0, (r[0] + r_div)), radius=r_div,
+                    color="#0088FF88", linestyle="--", label="Div Circle")
+    if x_mask_div_parabola is not None:
+        ax_dbg[0].plot(x[x_mask_div_parabola], r[x_mask_div_parabola],
+                       label="Div Parabola Func", color="g")
     ax_dbg[0].legend()
-    ax_dbg[0].set_title("Nozzle Curve Debugging")
+    ax_dbg[0].set_title("Nozzle Curve")
     ax_dbg[0].set_aspect("equal", adjustable="datalim")
     ax_dbg[1].plot(x, np.gradient(r, x), label="dr/dx", color="m")
-    ax_dbg[1].set_ylabel("dr/dx (unitless)")
+    ax_dbg[1].set_ylabel("dr/dx [1]")
     for ax in ax_dbg:
         ax.grid(True, which='both', linestyle='--', linewidth=0.5)
         ax.minorticks_on()
         ax.tick_params(which='major', length=7 / 2, width=1.5 / 2, labelsize=12 * 0.8)
         ax.tick_params(which='minor', length=4 / 2, width=1 / 2, labelsize=12 * 0.8)
-    ax_dbg[-1].set_xlabel("x (inches)")
+    ax_dbg[-1].set_xlabel("x [m]")
     fig_dbg.tight_layout()
 
     fig_dbg, ax_dbg = format_plot(fig=fig_dbg, ax=ax_dbg, aspect_ratio = 3/5)

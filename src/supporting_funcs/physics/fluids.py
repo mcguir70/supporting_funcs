@@ -258,7 +258,7 @@ def size_copv_adiabatic(p1_copv: float, p2_copv: float, temp_start: float,
                                "check p1/p2/p_tank.")
     except ValueError as e:
         while v_lo < liquid_volume:
-            v_lo *= 2
+            v_lo *= 10.0
             try:
                 if _err(v_lo) < 0.0:
                     break
@@ -269,7 +269,7 @@ def size_copv_adiabatic(p1_copv: float, p2_copv: float, temp_start: float,
                                "check p1/p2/p_tank.") from e
 
     while _err(v_hi) < 0.0:
-        v_hi *= 2.0
+        v_hi *= 10.0
         if v_hi > 1e4 * liquid_volume:
             raise RuntimeError("No COPV volume satisfies the end condition; "
                                "check p1/p2/p_tank.")
@@ -313,6 +313,22 @@ def kv_to_cda(kv: float) -> float:
     """
     kv_si = kv / (csp_hour * np.sqrt(csp_bar))
     return kv_si * np.sqrt(RHO_H2O_IEC_60534 / 2)
+
+def cda_to_kv(cda: float) -> float:
+    """Convert an effective area to a flow coefficient.
+
+    Parameters
+    ----------
+    cda: [m^2]
+        The effective area.
+
+    Returns
+    -------
+    kv: [m^3/(hr bar^.5)]
+        The flow coefficient.
+    """
+    cda_si = cda / np.sqrt(RHO_H2O_IEC_60534 / 2)
+    return cda_si * (csp_hour * np.sqrt(csp_bar))
 
 def cda_from_dp(mdot: float, rho: float, dp: float) -> float:
     """Calculate the effective area from a mass flow rate, density, and pressure drop.
